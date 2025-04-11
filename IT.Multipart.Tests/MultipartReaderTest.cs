@@ -44,23 +44,23 @@ Content-Type: text/xml"u8), Is.True);
     [Test]
     public void TryReadNextSectionByContentDispositionTest()
     {
-        var span = @"------WebKitFormBoundarylng3rD4syfIK3fT9
-Content-Disposition: attachment; filename=""Transform-utf8.xsl""; name=data
-Content-Type: text/xml
-
-<data>data attachment</data>
-------WebKitFormBoundarylng3rD4syfIK3fT9
-Content-Disposition: form-data; filename=""Transform-utf8.xsl""; name=""data""
-Content-Type: text/xml
-
-<data>data form-data</data>
-------WebKitFormBoundarylng3rD4syfIK3fT9
-Content-Disposition: form-data; name=""name""
-
-package name
-------WebKitFormBoundarylng3rD4syfIK3fT9--
-123
-"u8;
+        var span = "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8+
+"Content-Disposition: attachment; filename=\"Transform-utf8.xsl\"; name=data\r\n"u8 +
+"Content-Type: text/xml\r\n"u8 +
+"\r\n"u8 +
+"<data>data attachment</data>\r\n"u8 +
+"------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8 +
+"Content-Disposition: form-data; filename=\"Transform-utf8.xsl\"; name=\"data\"\r\n"u8 +
+"Content-Type: text/xml\r\n"u8 +
+"\r\n"u8 +
+"<data>data form-data</data>\r\n"u8 +
+"------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8 +
+"Content-Disposition: form-data; name=\"name\"\r\n"u8 +
+"\r\n"u8 +
+"package name\r\n"u8 +
+"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8 +
+"123\r\n"u8;
+        
         var boundary = new MultipartBoundary("------WebKitFormBoundarylng3rD4syfIK3fT9"u8);
         var reader = new MultipartReader(boundary, span);
 

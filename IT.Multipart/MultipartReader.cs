@@ -135,7 +135,7 @@ public ref struct MultipartReader
         => TryReadNextSectionByContentDisposition("form-data"u8, name, out section);
 
     internal static InvalidOperationException SeparatorNotFound()
-        => new("Invalid multipart section. Separator '\r\n\r\n' not found");
+        => new("Invalid multipart section. Separator '\\r\\n\\r\\n' not found");
 
     private static bool IsEndBoundary(byte first, byte second)
         => first == Dash && second == Dash ||
