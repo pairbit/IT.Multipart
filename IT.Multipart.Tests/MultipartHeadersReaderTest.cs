@@ -5,8 +5,7 @@ internal class MultipartHeadersReaderTest
     [Test]
     public void TryReadNextHeaderTest()
     {
-        var span = @"Content-Disposition: form-data; name=""transform""; filename=""Transform - utf8.xsl""
-Content-Type: text/xml"u8;
+        var span = "Content-Disposition: form-data; name=\"transform\"; filename=\"Transform - utf8.xsl\"\r\nContent-Type: text/xml"u8;
         var reader = new MultipartHeadersReader(span);
 
         Assert.That(reader.TryReadNextHeader(out var header), Is.True);
@@ -69,7 +68,7 @@ Content-Type: text/xml"u8;
 
         try
         {
-            new MultipartHeadersReader(@"form-data"u8).TryReadNextHeader(out _);
+            new MultipartHeadersReader("form-data"u8).TryReadNextHeader(out _);
             Assert.Fail();
         }
         catch (InvalidOperationException ex)
@@ -79,7 +78,7 @@ Content-Type: text/xml"u8;
 
         try
         {
-            new MultipartHeadersReader(@": form-data"u8).TryReadNextHeader(out _);
+            new MultipartHeadersReader(": form-data"u8).TryReadNextHeader(out _);
             Assert.Fail();
         }
         catch (InvalidOperationException ex)
