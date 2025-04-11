@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿#if NET6_0_OR_GREATER
+using System.Buffers;
 using System.Text;
 
 namespace IT.Multipart.Tests;
@@ -19,3 +20,4 @@ internal class MultipartBoundaryTest
         Assert.That(Encoding.UTF8.GetString(boundary.Span), Is.EqualTo("------MyBoundary"));
     }
 }
+#endif
