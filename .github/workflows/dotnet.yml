@@ -1,0 +1,71 @@
+name: .NET
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-win:
+    name: test-win
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.x
+            7.0.x
+            8.0.x
+    
+      - name: Restore
+        run: dotnet restore IT.Multipart.sln
+    
+      - name: Build
+        run: dotnet build IT.Multipart.sln --configuration Release --no-restore 
+    
+      - name: Test
+        run: dotnet test IT.Multipart.Tests/IT.Multipart.Tests.csproj --configuration Release --no-restore
+
+  test:
+    name: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.x
+            7.0.x
+            8.0.x
+    
+      - name: Restore
+        run: dotnet restore IT.Multipart.sln
+    
+      - name: Build
+        run: dotnet build IT.Multipart.sln --configuration Release --no-restore 
+    
+      - name: Test
+        run: dotnet test IT.Multipart.Tests/IT.Multipart.Tests.csproj --configuration Release --no-restore
+
+  publish:
+    needs: [test, test-win]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish IT.Multipart
+        uses: pairbit/publish-nuget@v2.6.1
+        with:
+            PROJECT_FILE_PATH: IT.Multipart/IT.Multipart.csproj
+            NUGET_KEY: ${{secrets.NUGET}}
+            TAG_COMMIT: true
