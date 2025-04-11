@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Company />
+    <Description>MultipartReader</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/pairbit/IT.Multipart</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <Authors>Ivan Tikhonov</Authors>
+    <Copyright>Ivan Tikhonov © 2025</Copyright>
+    <Version>2.0.0-pre1</Version>
+    <PackageTags>MultipartReader</PackageTags>
+    <PackageReadmeFile>Readme.md</PackageReadmeFile>
+    <PackageIcon>Icon.png</PackageIcon>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Readme.md" Pack="true" PackagePath="\" />
+    <None Include="..\Icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="IT.Multipart.Tests, PublicKey=002400000480000094000000060200000024000052534131000400000100010051184c308d60d1b05d85d7e1827403d3bc4180b708a4c0422f908bea5f7df60a1acba689834a8d48dc608111efbaa6b157f94fbb38dd8529103e5661302483d7daed7f776e5ba23ad015382d1b8aa5740af6bef12b616f861f3f5c09022c3c1dcef99c0b4477fd4e55a81759c7de63e02d95c77053fbd7893095be30a250d89c" />
+  </ItemGroup>
+
+</Project>
