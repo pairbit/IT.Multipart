@@ -75,7 +75,7 @@ public ref struct MultipartHeadersReader
         return true;
     }
 
-    public bool TryReadNextHeaderValueByName(ReadOnlySpan<byte> name, out Range value)
+    public bool TryFindHeaderValueByName(ReadOnlySpan<byte> name, out Range value)
     {
         while (TryReadNextHeader(out var header))
         {
@@ -89,11 +89,11 @@ public ref struct MultipartHeadersReader
         return false;
     }
 
-    public bool TryReadNextContentDisposition(out Range value)
-        => TryReadNextHeaderValueByName("Content-Disposition"u8, out value);
+    public bool TryFindContentDisposition(out Range value)
+        => TryFindHeaderValueByName("Content-Disposition"u8, out value);
 
-    public bool TryReadNextContentType(out Range value)
-        => TryReadNextHeaderValueByName("Content-Type"u8, out value);
+    public bool TryFindContentType(out Range value)
+        => TryFindHeaderValueByName("Content-Type"u8, out value);
 
     internal static InvalidOperationException SeparatorNotFound()
         => new("Invalid header. Separator ':' not found");

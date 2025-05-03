@@ -95,7 +95,7 @@ public ref struct MultipartReader
         return false;
     }
 
-    public bool TryReadNextSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
+    public bool TryFindSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
         ReadOnlySpan<byte> contentDispositionName, out MultipartSection section)
     {
         var span = _span;
@@ -107,7 +107,7 @@ public ref struct MultipartReader
             var bodyUtf8 = System.Text.Encoding.UTF8.GetString(span[section.Body]);
 #endif
             var headersReader = new MultipartHeadersReader(headers);
-            while (headersReader.TryReadNextContentDisposition(out var value))
+            while (headersReader.TryFindContentDisposition(out var value))
             {
                 var contentDisposition = headers[value];
 #if DEBUG
@@ -118,7 +118,7 @@ public ref struct MultipartReader
                 {
                     if (contentDisposition[type].SequenceEqual(contentDispositionType))
                     {
-                        while (headerFieldsReader.TryReadNextValueByName("name"u8, out var name))
+                        while (headerFieldsReader.TryFindValueByName("name"u8, out var name))
                         {
                             if (contentDisposition[name].SequenceEqual(contentDispositionName))
                                 return true;
@@ -131,8 +131,8 @@ public ref struct MultipartReader
         return false;
     }
 
-    public bool TryReadNextSectionByContentDispositionFormData(ReadOnlySpan<byte> name, out MultipartSection section)
-        => TryReadNextSectionByContentDisposition("form-data"u8, name, out section);
+    public bool TryFindSectionByContentDispositionFormData(ReadOnlySpan<byte> name, out MultipartSection section)
+        => TryFindSectionByContentDisposition("form-data"u8, name, out section);
 
     internal static InvalidOperationException SeparatorNotFound()
         => new("Invalid multipart section. Separator '\\r\\n\\r\\n' not found");

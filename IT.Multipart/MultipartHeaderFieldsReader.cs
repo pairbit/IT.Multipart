@@ -135,7 +135,7 @@ public ref struct MultipartHeaderFieldsReader
         return true;
     }
 
-    public bool TryReadNextValueByName(ReadOnlySpan<byte> name, out Range value)
+    public bool TryFindValueByName(ReadOnlySpan<byte> name, out Range value)
     {
         var span = _span;
         while (TryReadNextField(out var field))

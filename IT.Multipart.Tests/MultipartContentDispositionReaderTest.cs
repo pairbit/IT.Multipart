@@ -12,13 +12,13 @@ internal class MultipartContentDispositionReaderTest
         Assert.That(reader.IsFormData(), Is.True);
 
         Assert.That(reader.Offset, Is.Not.Zero);
-        Assert.That(reader.TryReadName(out var name), Is.True);
+        Assert.That(reader.TryFindName(out var name), Is.True);
         Assert.That(span[name].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.TryReadFileName(out var filename), Is.True);
+        Assert.That(reader.TryFindFileName(out var filename), Is.True);
         Assert.That(span[filename].SequenceEqual("Transform-utf8.xsl"u8), Is.True);
 
-        Assert.That(reader.TryReadFileNameStar(out var filenamestar), Is.True);
+        Assert.That(reader.TryFindFileNameStar(out var filenamestar), Is.True);
         Assert.That(span[filenamestar].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
 
         reader.Reset();

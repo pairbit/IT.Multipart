@@ -62,17 +62,17 @@ internal class MultipartReaderTest
         var boundary = new MultipartBoundary("------WebKitFormBoundarylng3rD4syfIK3fT9"u8);
         var reader = new MultipartReader(boundary, span);
 
-        Assert.That(reader.TryReadNextSectionByContentDisposition("form-data"u8, "data"u8, out var section), Is.True);
+        Assert.That(reader.TryFindSectionByContentDisposition("form-data"u8, "data"u8, out var section), Is.True);
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; filename=\"Transform-utf8.xsl\"; name=\"data\"\r\nContent-Type: text/xml"u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("<data>data form-data</data>"u8), Is.True);
 
         reader.Reset();
 
-        Assert.That(reader.TryReadNextSectionByContentDisposition("attachment"u8, "data"u8, out section), Is.True);
+        Assert.That(reader.TryFindSectionByContentDisposition("attachment"u8, "data"u8, out section), Is.True);
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: attachment; filename=\"Transform-utf8.xsl\"; name=data\r\nContent-Type: text/xml"u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("<data>data attachment</data>"u8), Is.True);
 
-        Assert.That(reader.TryReadNextSectionByContentDisposition("form-data"u8, "name"u8, out section), Is.True);
+        Assert.That(reader.TryFindSectionByContentDisposition("form-data"u8, "name"u8, out section), Is.True);
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=\"name\""u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("package name"u8), Is.True);
     }
