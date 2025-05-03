@@ -196,4 +196,22 @@ internal class MultipartHeaderFieldsReaderTest
         Assert.That(reader.TryFindValueByName("filename"u8, out value), Is.True);
         Assert.That(span[value].SequenceEqual("Transform-utf8.xsl"u8), Is.True);
     }
+
+    [Test]
+    public void TryFindValueByNameTest_Unorder()
+    {
+        var span = " \n\r\t\v\f filename \n\r\t\v\f = \n\r\t\v\f \"Transform-utf8.xsl\" \n\r\t\v\f ; \n\r\t\v\f name \n\r\t\v\f = \n\r\t\v\f transform \n\r\t\v\f ; \n\r\t\v\f form-data \n\r\t\v\f "u8;
+        var reader = new MultipartHeaderFieldsReader(span);
+
+        Assert.That(reader.TryFindValueByName(""u8, out var value), Is.True);
+        Assert.That(span[value].SequenceEqual("form-data"u8), Is.True);
+
+        reader.Reset();
+        Assert.That(reader.TryFindValueByName("name"u8, out value), Is.True);
+        Assert.That(span[value].SequenceEqual("transform"u8), Is.True);
+        
+        reader.Reset();
+        Assert.That(reader.TryFindValueByName("filename"u8, out value), Is.True);
+        Assert.That(span[value].SequenceEqual("Transform-utf8.xsl"u8), Is.True);
+    }
 }

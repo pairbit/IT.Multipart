@@ -47,4 +47,29 @@ internal class MultipartContentDispositionReaderTest
         reader.Reset();
         Assert.That(reader.Offset, Is.Zero);
     }
+
+    [Test]
+    public void TryFindTest_Unorder()
+    {
+        var span = " form-data; filename*=utf-8''file%20name.jpg; filename=\"Transform-utf8.xsl\"; name=transform"u8;
+        var reader = new MultipartContentDispositionReader(span);
+
+        Assert.That(reader.Offset, Is.Zero);
+        Assert.That(reader.IsFormData(), Is.True);
+
+        Assert.That(reader.Offset, Is.Not.Zero);
+        Assert.That(reader.TryFindName(out var name), Is.True);
+        Assert.That(span[name].SequenceEqual("transform"u8), Is.True);
+
+        reader.Reset();
+        Assert.That(reader.TryFindFileName(out var filename), Is.True);
+        Assert.That(span[filename].SequenceEqual("Transform-utf8.xsl"u8), Is.True);
+
+        reader.Reset();
+        Assert.That(reader.TryFindFileNameStar(out var filenamestar), Is.True);
+        Assert.That(span[filenamestar].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
+
+        reader.Reset();
+        Assert.That(reader.Offset, Is.Zero);
+    }
 }
