@@ -95,6 +95,45 @@ public ref struct MultipartReader
         return false;
     }
 
+    public bool TryReadNextSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
+        ReadOnlySpan<byte> contentDispositionName, out MultipartSection section)
+    {
+        var span = _span;
+        if (TryReadNextSection(out section))
+        {
+            var headers = span[section.Headers];
+#if DEBUG
+            var headersUtf8 = System.Text.Encoding.UTF8.GetString(headers);
+            var bodyUtf8 = System.Text.Encoding.UTF8.GetString(span[section.Body]);
+#endif
+            var headersReader = new MultipartHeadersReader(headers);
+            if (headersReader.TryReadNextContentDisposition(out var value))
+            {
+                var contentDisposition = headers[value];
+#if DEBUG
+                var contentDispositionUtf8 = System.Text.Encoding.UTF8.GetString(contentDisposition);
+#endif
+                var headerFieldsReader = new MultipartHeaderFieldsReader(contentDisposition);
+                if (headerFieldsReader.TryReadNextValue(out var type))
+                {
+                    if (contentDisposition[type].SequenceEqual(contentDispositionType))
+                    {
+                        while (headerFieldsReader.TryReadNextValueByName("name"u8, out var name))
+                        {
+                            if (contentDisposition[name].SequenceEqual(contentDispositionName))
+                                return true;
+                        }
+                    }
+                }
+            }
+        }
+        section = default;
+        return false;
+    }
+
+    public bool TryReadNextSectionByContentDispositionFormData(ReadOnlySpan<byte> name, out MultipartSection section)
+        => TryReadNextSectionByContentDisposition("form-data"u8, name, out section);
+
     public bool TryFindSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
         ReadOnlySpan<byte> contentDispositionName, out MultipartSection section)
     {

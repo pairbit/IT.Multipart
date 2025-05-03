@@ -135,6 +135,24 @@ public ref struct MultipartHeaderFieldsReader
         return true;
     }
 
+    public bool TryReadNextValueByName(ReadOnlySpan<byte> name, out Range value)
+    {
+        if (TryReadNextField(out var field))
+        {
+#if DEBUG
+            var nameUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Name]);
+            var valueUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Value]);
+#endif
+            if (_span[field.Name].SequenceEqual(name))
+            {
+                value = field.Value;
+                return true;
+            }
+        }
+        value = default;
+        return false;
+    }
+
     public bool TryFindValueByName(ReadOnlySpan<byte> name, out Range value)
     {
         var span = _span;

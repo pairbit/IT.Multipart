@@ -75,6 +75,20 @@ public ref struct MultipartHeadersReader
         return true;
     }
 
+    public bool TryReadNextHeaderValueByName(ReadOnlySpan<byte> name, out Range value)
+    {
+        if (TryReadNextHeader(out var header))
+        {
+            if (_span[header.Name].SequenceEqual(name))
+            {
+                value = header.Value;
+                return true;
+            }
+        }
+        value = default;
+        return false;
+    }
+
     public bool TryFindHeaderValueByName(ReadOnlySpan<byte> name, out Range value)
     {
         while (TryReadNextHeader(out var header))
@@ -88,6 +102,12 @@ public ref struct MultipartHeadersReader
         value = default;
         return false;
     }
+
+    public bool TryReadNextContentDisposition(out Range value)
+        => TryReadNextHeaderValueByName("Content-Disposition"u8, out value);
+
+    public bool TryReadNextContentType(out Range value)
+        => TryReadNextHeaderValueByName("Content-Type"u8, out value);
 
     public bool TryFindContentDisposition(out Range value)
         => TryFindHeaderValueByName("Content-Disposition"u8, out value);

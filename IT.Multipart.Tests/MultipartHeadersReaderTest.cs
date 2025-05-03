@@ -20,10 +20,10 @@ internal class MultipartHeadersReaderTest
         Assert.That(header, Is.EqualTo(default(MultipartHeader)));
 
         reader.Reset();
-        Assert.That(reader.TryFindContentDisposition(out var value), Is.True);
+        Assert.That(reader.TryReadNextContentDisposition(out var value), Is.True);
         Assert.That(span[value].SequenceEqual("form-data; name=\"transform\"; filename=\"Transform - utf8.xsl\""u8), Is.True);
 
-        Assert.That(reader.TryFindContentType(out value), Is.True);
+        Assert.That(reader.TryReadNextContentType(out value), Is.True);
         Assert.That(span[value].SequenceEqual("text/xml"u8), Is.True);
 
         span = "Content-Type:text/xml"u8;

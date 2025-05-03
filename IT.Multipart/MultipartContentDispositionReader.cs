@@ -29,6 +29,12 @@ public ref struct MultipartContentDispositionReader
 
     public bool IsAttachment() => _reader.TryReadNextValue(out var type) && _reader.Span[type].SequenceEqual("attachment"u8);
 
+    public bool TryReadName(out Range value) => _reader.TryReadNextValueByName("name"u8, out value);
+
+    public bool TryReadFileName(out Range value) => _reader.TryReadNextValueByName("filename"u8, out value);
+
+    public bool TryReadFileNameStar(out Range value) => _reader.TryReadNextValueByName("filename*"u8, out value);
+
     public bool TryFindName(out Range value) => _reader.TryFindValueByName("name"u8, out value);
 
     public bool TryFindFileName(out Range value) => _reader.TryFindValueByName("filename"u8, out value);
