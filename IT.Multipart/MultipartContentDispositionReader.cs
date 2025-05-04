@@ -37,36 +37,49 @@ public ref struct MultipartContentDispositionReader
 
     public bool TryRead(out MultipartContentDisposition value)
     {
-        if (TryReadType(out var type) && TryReadName(out var name))
+        if (!TryReadType(out var type))
         {
-            if (!_reader.TryReadNextField(out var field))
+            value = default;
+            return false;
+        }
+
+        if (!_reader.TryReadNextField(out var field))
+        {
+            value = new() { Type = type };
+            return true;
+        }
+
+        Range name = default;
+        var span = _reader.Span;
+        var fieldName = span[field.Name];
+        if (fieldName.SequenceEqual("name"u8))
+        {
+            name = field.Value;
+            if (!_reader.TryReadNextField(out field))
             {
                 value = new() { Type = type, Name = name };
                 return true;
             }
-            Range fileName = default;
-            var span = _reader.Span;
-            var fieldName = span[field.Name];
-            if (fieldName.SequenceEqual("filename"u8))
-            {
-                fileName = field.Value;
-                if (!_reader.TryReadNextField(out field))
-                {
-                    value = new() { Type = type, Name = name, FileName = fileName };
-                    return true;
-                }
-                fieldName = span[field.Name];
-            }
-
-            Range fileNameStar = default;
-            if (fieldName.SequenceEqual("filename*"u8)) fileNameStar = field.Value;
-
-            value = new() { Type = type, Name = name, FileName = fileName, FileNameStar = fileNameStar };
-            return true;
+            fieldName = span[field.Name];
         }
 
-        value = default;
-        return false;
+        Range fileName = default;
+        if (fieldName.SequenceEqual("filename"u8))
+        {
+            fileName = field.Value;
+            if (!_reader.TryReadNextField(out field))
+            {
+                value = new() { Type = type, Name = name, FileName = fileName };
+                return true;
+            }
+            fieldName = span[field.Name];
+        }
+
+        Range fileNameStar = default;
+        if (fieldName.SequenceEqual("filename*"u8)) fileNameStar = field.Value;
+
+        value = new() { Type = type, Name = name, FileName = fileName, FileNameStar = fileNameStar };
+        return true;
     }
 
     public bool TryFindName(out Range value) => _reader.TryFindValueByName("name"u8, out value);

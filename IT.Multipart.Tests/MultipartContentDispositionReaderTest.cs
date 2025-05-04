@@ -32,6 +32,18 @@ internal class MultipartContentDispositionReaderTest
     }
 
     [Test]
+    public void TryReadTest_Type()
+    {
+        var span = " form-data "u8;
+        var reader = new MultipartContentDispositionReader(span);
+        Assert.That(reader.TryRead(out var cd), Is.True);
+        Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
+        Assert.That(cd.Name, Is.EqualTo(default(Range)));
+        Assert.That(cd.FileName, Is.EqualTo(default(Range)));
+        Assert.That(cd.FileNameStar, Is.EqualTo(default(Range)));
+    }
+
+    [Test]
     public void TryReadTest_Name()
     {
         var span = " form-data; name=transform"u8;
