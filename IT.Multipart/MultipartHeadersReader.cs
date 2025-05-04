@@ -89,12 +89,12 @@ public ref struct MultipartHeadersReader
         return false;
     }
 
-    public MultipartContentDispositionReaded ReadNextContentDisposition(out MultipartContentDisposition value)
+    public MultipartReadingStatus ReadNextContentDisposition(out MultipartContentDisposition value)
     {
         if (!TryReadNextHeaderValueByName("Content-Disposition"u8, out var headerValue))
         {
             value = default;
-            return MultipartContentDispositionReaded.NotFound;
+            return MultipartReadingStatus.NotFound;
         }
         return new MultipartContentDispositionReader(_span[headerValue]).Read(out value);
     }

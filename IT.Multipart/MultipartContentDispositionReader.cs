@@ -35,18 +35,18 @@ public ref struct MultipartContentDispositionReader
 
     public bool TryReadFileNameStar(out Range value) => _reader.TryReadNextValueByName("filename*"u8, out value);
 
-    public MultipartContentDispositionReaded Read(out MultipartContentDisposition value)
+    public MultipartReadingStatus Read(out MultipartContentDisposition value)
     {
         if (!TryReadType(out var type) || type.Start.Value == type.End.Value)
         {
             value = default;
-            return MultipartContentDispositionReaded.NotFound;
+            return MultipartReadingStatus.NotFound;
         }
 
         if (!_reader.TryReadNextField(out var field))
         {
             value = new() { Type = type };
-            return MultipartContentDispositionReaded.Done;
+            return MultipartReadingStatus.Done;
         }
 
         Range name = default;
@@ -58,7 +58,7 @@ public ref struct MultipartContentDispositionReader
             if (!_reader.TryReadNextField(out field))
             {
                 value = new() { Type = type, Name = name };
-                return MultipartContentDispositionReaded.Done;
+                return MultipartReadingStatus.Done;
             }
             fieldName = span[field.Name];
         }
@@ -70,7 +70,7 @@ public ref struct MultipartContentDispositionReader
             if (!_reader.TryReadNextField(out field))
             {
                 value = new() { Type = type, Name = name, FileName = fileName };
-                return MultipartContentDispositionReaded.Done;
+                return MultipartReadingStatus.Done;
             }
             fieldName = span[field.Name];
         }
@@ -78,11 +78,11 @@ public ref struct MultipartContentDispositionReader
         if (fieldName.SequenceEqual("filename*"u8) && !_reader.TryReadNextValue(out _))
         {
             value = new() { Type = type, Name = name, FileName = fileName, FileNameStar = field.Value };
-            return MultipartContentDispositionReaded.Done;
+            return MultipartReadingStatus.Done;
         }
 
         value = default;
-        return MultipartContentDispositionReaded.FieldNotMappedOrDuplicatedOrOrderWrong;
+        return MultipartReadingStatus.NotMappedOrDuplicatedOrOrderWrong;
     }
 
     public bool TryFindName(out Range value) => _reader.TryFindValueByName("name"u8, out value);
