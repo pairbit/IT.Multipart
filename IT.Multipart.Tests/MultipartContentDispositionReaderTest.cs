@@ -23,6 +23,48 @@ internal class MultipartContentDispositionReaderTest
 
         reader.Reset();
         Assert.That(reader.Offset, Is.Zero);
+
+        Assert.That(reader.TryRead(out var cd), Is.True);
+        Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
+        Assert.That(span[cd.Name].SequenceEqual("transform"u8), Is.True);
+        Assert.That(span[cd.FileName].SequenceEqual("Transform-utf8.xsl"u8), Is.True);
+        Assert.That(span[cd.FileNameStar].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
+    }
+
+    [Test]
+    public void TryReadTest_Name()
+    {
+        var span = " form-data; name=transform"u8;
+        var reader = new MultipartContentDispositionReader(span);
+        Assert.That(reader.TryRead(out var cd), Is.True);
+        Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
+        Assert.That(span[cd.Name].SequenceEqual("transform"u8), Is.True);
+        Assert.That(cd.FileName, Is.EqualTo(default(Range)));
+        Assert.That(cd.FileNameStar, Is.EqualTo(default(Range)));
+    }
+
+    [Test]
+    public void TryReadTest_FileName()
+    {
+        var span = " form-data; name=transform; filename=\"Transform-utf8.xsl\""u8;
+        var reader = new MultipartContentDispositionReader(span);
+        Assert.That(reader.TryRead(out var cd), Is.True);
+        Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
+        Assert.That(span[cd.Name].SequenceEqual("transform"u8), Is.True);
+        Assert.That(span[cd.FileName].SequenceEqual("Transform-utf8.xsl"u8), Is.True);
+        Assert.That(cd.FileNameStar, Is.EqualTo(default(Range)));
+    }
+
+    [Test]
+    public void TryReadTest_FileNameStar()
+    {
+        var span = " form-data; name=transform; filename*=utf-8''file%20name.jpg"u8;
+        var reader = new MultipartContentDispositionReader(span);
+        Assert.That(reader.TryRead(out var cd), Is.True);
+        Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
+        Assert.That(span[cd.Name].SequenceEqual("transform"u8), Is.True);
+        Assert.That(cd.FileName, Is.EqualTo(default(Range)));
+        Assert.That(span[cd.FileNameStar].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
     }
 
     [Test]

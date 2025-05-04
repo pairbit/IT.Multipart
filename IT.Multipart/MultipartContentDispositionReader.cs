@@ -35,6 +35,40 @@ public ref struct MultipartContentDispositionReader
 
     public bool TryReadFileNameStar(out Range value) => _reader.TryReadNextValueByName("filename*"u8, out value);
 
+    public bool TryRead(out MultipartContentDisposition value)
+    {
+        if (TryReadType(out var type) && TryReadName(out var name))
+        {
+            if (!_reader.TryReadNextField(out var field))
+            {
+                value = new() { Type = type, Name = name };
+                return true;
+            }
+            Range fileName = default;
+            var span = _reader.Span;
+            var fieldName = span[field.Name];
+            if (fieldName.SequenceEqual("filename"u8))
+            {
+                fileName = field.Value;
+                if (!_reader.TryReadNextField(out field))
+                {
+                    value = new() { Type = type, Name = name, FileName = fileName };
+                    return true;
+                }
+                fieldName = span[field.Name];
+            }
+
+            Range fileNameStar = default;
+            if (fieldName.SequenceEqual("filename*"u8)) fileNameStar = field.Value;
+
+            value = new() { Type = type, Name = name, FileName = fileName, FileNameStar = fileNameStar };
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
     public bool TryFindName(out Range value) => _reader.TryFindValueByName("name"u8, out value);
 
     public bool TryFindFileName(out Range value) => _reader.TryFindValueByName("filename"u8, out value);

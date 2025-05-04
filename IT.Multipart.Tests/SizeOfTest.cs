@@ -10,6 +10,7 @@ internal class SizeOfTest
         Assert.That(Unsafe.SizeOf<MultipartHeader>(), Is.EqualTo(16));
         Assert.That(Unsafe.SizeOf<MultipartHeaderField>(), Is.EqualTo(16));
         Assert.That(Unsafe.SizeOf<MultipartSection>(), Is.EqualTo(16));
+        Assert.That(Unsafe.SizeOf<MultipartContentDisposition>(), Is.EqualTo(32));
 
 #if NET9_0_OR_GREATER
         Assert.That(Unsafe.SizeOf<MultipartBoundary>(), Is.EqualTo(16));
