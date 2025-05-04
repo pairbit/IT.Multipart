@@ -40,7 +40,7 @@ public ref struct MultipartContentDispositionReader
         if (!TryReadType(out var type) || type.Start.Value == type.End.Value)
         {
             value = default;
-            return MultipartContentDispositionReaded.TypeNotFound;
+            return MultipartContentDispositionReaded.NotFound;
         }
 
         if (!_reader.TryReadNextField(out var field))

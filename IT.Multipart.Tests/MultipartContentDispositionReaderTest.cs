@@ -120,10 +120,10 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = "  "u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartContentDispositionReaded.TypeNotFound));
+        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartContentDispositionReaded.NotFound));
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
 
-        Assert.That(reader.Read(out cd), Is.EqualTo(MultipartContentDispositionReaded.TypeNotFound));
+        Assert.That(reader.Read(out cd), Is.EqualTo(MultipartContentDispositionReaded.NotFound));
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
     }
 

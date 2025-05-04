@@ -95,35 +95,6 @@ public ref struct MultipartReader
         return false;
     }
 
-    public MultipartSectionWithContentDispositionReaded ReadNextSectionWithContentDisposition(out MultipartSection section, out MultipartContentDisposition contentDisposition)
-    {
-        if (!TryReadNextSection(out section))
-        {
-            contentDisposition = default;
-            return MultipartSectionWithContentDispositionReaded.SectionNotFound;
-        }
-        var headers = _span[section.Headers];
-#if DEBUG
-        var headersUtf8 = System.Text.Encoding.UTF8.GetString(headers);
-        var bodyUtf8 = System.Text.Encoding.UTF8.GetString(_span[section.Body]);
-#endif
-        var headersReader = new MultipartHeadersReader(headers);
-        if (!headersReader.TryReadNextContentDisposition(out var value))
-        {
-            contentDisposition = default;
-            return MultipartSectionWithContentDispositionReaded.ContentDispositionNotFound;
-        }
-        var cd = headers[value];
-#if DEBUG
-        var cdUtf8 = System.Text.Encoding.UTF8.GetString(cd);
-#endif
-        var cdReaded = new MultipartContentDispositionReader(cd).Read(out contentDisposition);
-        if (cdReaded != MultipartContentDispositionReaded.Done)
-            return (MultipartSectionWithContentDispositionReaded)((byte)cdReaded + 2);
-
-        return MultipartSectionWithContentDispositionReaded.Done;
-    }
-
     public bool TryReadNextSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
         ReadOnlySpan<byte> contentDispositionName, out MultipartSection section)
     {

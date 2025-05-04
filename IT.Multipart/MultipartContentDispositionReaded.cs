@@ -3,6 +3,6 @@
 public enum MultipartContentDispositionReaded : byte
 {
     Done = 0,
-    TypeNotFound = 1,
+    NotFound = 1,
     FieldNotMappedOrDuplicatedOrOrderWrong = 2
 }
