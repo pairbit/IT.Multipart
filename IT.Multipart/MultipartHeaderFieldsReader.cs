@@ -116,17 +116,17 @@ public ref struct MultipartHeaderFieldsReader
             var valueEnd = span.Length;
             if (span[valueStart] == Quote)
             {
-                if (span[valueEnd - 1] != Quote)
-                {
-                    valueEnd = ReadNextQuote() - nameStart;
-                }
+                valueEnd = span[valueEnd - 1] == Quote ? valueEnd + nameStart - 1 : ReadNextQuote() - 1;
                 valueStart++;
-                valueEnd--;
+            }
+            else
+            {
+                valueEnd += nameStart;
             }
             field = new()
             {
                 Name = new(nameStart, nameEnd + nameStart),
-                Value = new(valueStart + nameStart, valueEnd + nameStart)
+                Value = new(valueStart + nameStart, valueEnd)
             };
 #if DEBUG
             nameUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Name]);
