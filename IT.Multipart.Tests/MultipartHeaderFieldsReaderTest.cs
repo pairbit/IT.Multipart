@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+
 namespace IT.Multipart.Tests;
 
 internal class MultipartHeaderFieldsReaderTest
@@ -63,6 +65,24 @@ internal class MultipartHeaderFieldsReaderTest
 
         Assert.That(reader.TryReadNextValue(out value), Is.False);
         Assert.That(value, Is.EqualTo(default(Range)));
+    }
+
+    [Test]
+    public void TryReadNextValueTest_INVALID()
+    {
+        var span = "filename=\"Transform;utf8.xsl\""u8;
+        var reader = new MultipartHeaderFieldsReader(span);
+
+        Assert.That(reader.TryReadNextValue(out var value), Is.True);
+        Assert.That(span[value].SequenceEqual("filename=\"Transform"u8), Is.True);
+
+        Assert.That(reader.TryReadNextValue(out value), Is.True);
+        Assert.That(span[value].SequenceEqual("utf8.xsl\""u8), Is.True);
+
+        var cd = ContentDispositionHeaderValue.Parse("inline;filename=\"Transform;utf8.xsl\"");
+        Assert.That(cd.DispositionType, Is.EqualTo("inline"));
+        Assert.That(cd.FileName, Is.EqualTo("\"Transform;utf8.xsl\""));
+        Assert.That(cd.ToString(), Is.EqualTo("inline; filename=\"Transform;utf8.xsl\""));
     }
 
     [Test]
