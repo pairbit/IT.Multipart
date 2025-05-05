@@ -4,7 +4,7 @@ namespace IT.Multipart;
 
 //https://datatracker.ietf.org/doc/html/rfc5987
 //Content-Disposition: form-data; name=file; filename=3fa92187-9eb1-4905-8ea8-70d1332162c0.xml; filename*=utf-8''3fa92187-9eb1-4905-8ea8-70d1332162c0.xml
-//Content-Disposition: form-data; name="transform"; filename="Transform-utf8.xsl"
+//Content-Disposition: form-data; name="transform"; filename="Transform;utf8.xsl"
 public ref struct MultipartHeaderFieldsReader
 {
     private const byte Quote = (byte)'"';
@@ -112,16 +112,17 @@ public ref struct MultipartHeaderFieldsReader
 #if DEBUG
             valueUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(valueStart));
 #endif
+            var nameStart = value.Start.Value;
             var valueEnd = span.Length;
-            if (span[valueStart] == Quote && span[valueEnd - 1] == Quote)
+            if (span[valueStart] == Quote)
             {
+                if (span[valueEnd - 1] != Quote)
+                {
+                    valueEnd = ReadNextQuote() - nameStart;
+                }
                 valueStart++;
                 valueEnd--;
-#if DEBUG
-                valueUtf8 = System.Text.Encoding.UTF8.GetString(span[new Range(valueStart, valueEnd)]);
-#endif
             }
-            var nameStart = value.Start.Value;
             field = new()
             {
                 Name = new(nameStart, nameEnd + nameStart),
@@ -172,6 +173,33 @@ public ref struct MultipartHeaderFieldsReader
         return false;
     }
 
+    private int ReadNextQuote()
+    {
+        var offset = _offset;
+        var span = _span;
+        if (span.Length <= offset) throw QuoteNotFound();
+        span = span.Slice(offset);
+#if DEBUG
+        var spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
+#endif
+        var sep = span.IndexOf(Quote);
+        if (sep < 0) throw QuoteNotFound();
+        sep++;
+        var end = sep;
+        for (; end < span.Length; end++)
+        {
+            var token = span[end];
+            if (!IsWhiteSpace(token))
+            {
+                if (token != Sep) throw QuoteInvalid();
+                end++;
+                break;
+            }
+        }
+        _offset = offset + end;
+        return offset + sep;
+    }
+
     private static bool IsWhiteSpace(byte b) => b is
         (byte)' ' or //space
         (byte)'\n' or //newline
@@ -182,4 +210,10 @@ public ref struct MultipartHeaderFieldsReader
 
     internal static InvalidOperationException NameNotFound()
         => new("Invalid header field. Name not found");
+
+    internal static InvalidOperationException QuoteNotFound()
+        => new("Invalid header field. Quote not found");
+
+    internal static InvalidOperationException QuoteInvalid()
+        => new("Invalid header field. Quote is invalid");
 }

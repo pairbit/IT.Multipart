@@ -4,7 +4,7 @@ namespace IT.Multipart;
 
 //https://datatracker.ietf.org/doc/html/rfc5987
 //Content-Disposition: form-data; name=file; filename=3fa92187-9eb1-4905-8ea8-70d1332162c0.xml; filename*=utf-8''3fa92187-9eb1-4905-8ea8-70d1332162c0.xml
-//Content-Disposition: form-data; name="transform"; filename="Transform-utf8.xsl"
+//Content-Disposition: form-data; name="transform"; filename="Transform;utf8.xsl"
 public ref struct MultipartContentDispositionReader
 {
     private MultipartHeaderFieldsReader _reader;
