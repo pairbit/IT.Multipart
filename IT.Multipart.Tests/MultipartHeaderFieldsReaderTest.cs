@@ -111,11 +111,11 @@ internal class MultipartHeaderFieldsReaderTest
 
         Assert.That(reader.TryReadNextValue(out _), Is.False);
 
-        span = "abc=\"\"a\",\"b\"\""u8;
+        span = "ab=\"\"a\",\"b\"\""u8;
         reader = new MultipartHeaderFieldsReader(span);
 
         Assert.That(reader.TryReadNextField(out field), Is.True);
-        Assert.That(span[field.Name].SequenceEqual("a"u8), Is.True);
+        Assert.That(span[field.Name].SequenceEqual("ab"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("\"a\",\"b\""u8), Is.True);
 
         Assert.That(Assert.Throws<InvalidOperationException>(() => new MultipartHeaderFieldsReader("filename=\"a"u8).TryReadNextField(out _))
