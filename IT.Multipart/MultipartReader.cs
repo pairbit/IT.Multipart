@@ -10,16 +10,16 @@ public ref struct MultipartReader
     private static readonly byte[] CRLFCRLF = [CR, LF, CR, LF];
 
     private readonly ReadOnlySpan<byte> _span;
-    private readonly MultipartBoundary _boundary;
+    private readonly ReadOnlySpan<byte> _boundary;
     private int _offset;
 
     public readonly ReadOnlySpan<byte> Span => _span;
 
-    public readonly MultipartBoundary Boundary => _boundary;
+    public readonly ReadOnlySpan<byte> Boundary => _boundary;
 
     public readonly int Offset => _offset;
 
-    public MultipartReader(MultipartBoundary boundary, ReadOnlySpan<byte> span)
+    public MultipartReader(ReadOnlySpan<byte> boundary, ReadOnlySpan<byte> span)
     {
         _boundary = boundary;
         _span = span;
@@ -43,7 +43,7 @@ public ref struct MultipartReader
 #if DEBUG
         var spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
 #endif
-        var boundary = _boundary.Span;
+        var boundary = _boundary;
         var boundaryLength = boundary.Length;
         var start = 0;
         if (offset == 0)

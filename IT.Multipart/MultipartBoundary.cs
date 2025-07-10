@@ -5,16 +5,18 @@ using System.Text;
 
 namespace IT.Multipart;
 
-public readonly ref struct MultipartBoundary
+public readonly struct MultipartBoundary
 {
     private const int PrefixLength = 2;
-    public readonly ReadOnlySpan<byte> _span;
+    public readonly ReadOnlyMemory<byte> _memory;
 
-    public ReadOnlySpan<byte> Span => _span;
+    public ReadOnlySpan<byte> Span => _memory.Span;
 
-    public MultipartBoundary(ReadOnlySpan<byte> span)
+    public ReadOnlyMemory<byte> Memory => _memory;
+
+    public MultipartBoundary(ReadOnlyMemory<byte> memory)
     {
-        _span = span;
+        _memory = memory;
     }
 
     public static int GetMinCapacity(ReadOnlySpan<char> boundary) => boundary.Length + PrefixLength;
@@ -29,7 +31,8 @@ public readonly ref struct MultipartBoundary
 
         var utf8Length = Encoding.UTF8.GetByteCount(boundary) + PrefixLength;
 
-        var span = writer.GetSpan(utf8Length).Slice(0, utf8Length);
+        var memory = writer.GetMemory(utf8Length).Slice(0, utf8Length);
+        var span = memory.Span;
         span[0] = (byte)'-';
         span[1] = (byte)'-';
 #if NET6_0_OR_GREATER
@@ -43,7 +46,7 @@ public readonly ref struct MultipartBoundary
 
         writer.Advance(utf8Length);
 
-        return new MultipartBoundary(span);
+        return new MultipartBoundary(memory);
     }
 
     internal static ReadOnlySpan<char> RemoveQuotes(ReadOnlySpan<char> span)
