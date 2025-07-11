@@ -81,7 +81,7 @@ public static class RFC5987Encoding
     public static bool TryParse(ReadOnlySpan<byte> bytes, out RFC5987Value value)
     {
         var firstIndex = bytes.IndexOf(QuoteByte);
-        if (firstIndex == -1)
+        if (firstIndex < 1)
         {
             value = default;
             return false;
