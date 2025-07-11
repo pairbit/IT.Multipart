@@ -1,6 +1,4 @@
-﻿using System.Buffers.Text;
-
-namespace IT.Multipart.Tests;
+﻿namespace IT.Multipart.Tests;
 
 internal class RFC5987EncodingTest
 {
@@ -27,6 +25,20 @@ internal class RFC5987EncodingTest
         TryDecodeUtf8InPlaceTest("%d0%b8%d0%bc%d1%8f.pdf"u8, "имя.pdf"u8);
         TryDecodeUtf8InPlaceTest("myname"u8, "myname"u8);
         TryDecodeUtf8InPlaceTest("%25D0"u8, "%D0"u8);
+        TryDecodeUtf8InPlaceTest("%e2%82%ac%20exchange%20rates"u8, "€ exchange rates"u8);
+    }
+
+    [Test]
+    public void TryDecodeTest()
+    {
+        Assert.That(RFC5987Encoding.TryDecode("utf-8''%e2%82%ac%20exchange%20rates", out var rfc5987Decoded), Is.True);
+        Assert.That(rfc5987Decoded, Is.EqualTo("€ exchange rates"));
+
+        Assert.That(RFC5987Encoding.TryDecode("UTF-8''%c2%a3%20and%20%e2%82%ac%20rates", out rfc5987Decoded), Is.True);
+        Assert.That(rfc5987Decoded, Is.EqualTo("£ and € rates"));
+
+        Assert.That(RFC5987Encoding.TryDecode("iso-8859-1'en'%A3%20rates", out rfc5987Decoded), Is.True);
+        Assert.That(rfc5987Decoded, Is.EqualTo("£ rates"));
     }
 
     private static void TryParseTest(ReadOnlySpan<byte> bytes,

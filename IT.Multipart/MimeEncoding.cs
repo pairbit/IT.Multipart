@@ -6,7 +6,7 @@ using System.Text;
 
 namespace IT.Multipart;
 
-public static class MimeEncoding
+internal static class MimeEncoding
 {
     // Attempt to decode MIME encoded strings.
     public static bool TryDecode(string? input,
