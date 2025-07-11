@@ -1,4 +1,6 @@
-﻿namespace IT.Multipart.Tests;
+﻿using System.Text;
+
+namespace IT.Multipart.Tests;
 
 internal class RFC5987EncodingTest
 {
@@ -17,7 +19,7 @@ internal class RFC5987EncodingTest
         Assert.That(RFC5987Encoding.TryParse("'"u8, out _), Is.False);
         Assert.That(RFC5987Encoding.TryParse("a'"u8, out _), Is.False);
     }
-    
+
     [Test]
     public void TryDecodeUtf8InPlaceTest()
     {
@@ -26,6 +28,13 @@ internal class RFC5987EncodingTest
         TryDecodeUtf8InPlaceTest("myname"u8, "myname"u8);
         TryDecodeUtf8InPlaceTest("%25D0"u8, "%D0"u8);
         TryDecodeUtf8InPlaceTest("%e2%82%ac%20exchange%20rates"u8, "€ exchange rates"u8);
+        //TryDecodeUtf8InPlaceTest("%A3%20rates"u8, "£ rates"u8);
+    }
+
+    //[Test]
+    public void TryDecodeInPlaceTest()
+    {
+        TryDecodeInPlaceTest(Encoding.GetEncoding("iso-8859-1"), "%A3%20rates"u8, "£ rates"u8);
     }
 
     [Test]
@@ -56,6 +65,17 @@ internal class RFC5987EncodingTest
     {
         var buffer = encoded.ToArray();
         Assert.That(RFC5987Encoding.TryDecodeUtf8InPlace(buffer, out var written), Is.True);
-        Assert.That(buffer.AsSpan(0, written).SequenceEqual(decoded), Is.True);
+
+        if (!buffer.AsSpan(0, written).SequenceEqual(decoded))
+            Assert.Fail(Encoding.UTF8.GetString(buffer.AsSpan(0, written)));
+    }
+
+    private static void TryDecodeInPlaceTest(Encoding encoding, ReadOnlySpan<byte> encoded, ReadOnlySpan<byte> decoded)
+    {
+        var buffer = encoded.ToArray();
+        Assert.That(RFC5987Encoding.TryDecodeInPlace(encoding, buffer, out var written), Is.True);
+
+        if (!buffer.AsSpan(0, written).SequenceEqual(decoded))
+            Assert.Fail(encoding.GetString(buffer.AsSpan(0, written)));
     }
 }

@@ -108,6 +108,15 @@ public static class RFC5987Encoding
         throw new NotImplementedException();
     }
 
+    internal static bool TryDecodeInPlace(Encoding encoding, Span<byte> encoded, out int written)
+    {
+        if (!TryDecodeUtf8InPlace(encoded, out written))
+            return false;
+
+        //encoding.get
+        throw new NotImplementedException();
+    }
+
     public static bool TryDecodeUtf8InPlace(Span<byte> encoded, out int written)
     {
 #if DEBUG
@@ -130,6 +139,9 @@ public static class RFC5987Encoding
                 encoded[written++] = encoded[i];
             }
         }
+#if DEBUG
+        encodedUtf8 = Encoding.UTF8.GetString(encoded);
+#endif
         return true;
     }
 
