@@ -7,6 +7,7 @@ internal class SizeOfTest
     [Test]
     public void SizeTest()
     {
+        Assert.That(Unsafe.SizeOf<RFC5987Value>(), Is.EqualTo(8));
         Assert.That(Unsafe.SizeOf<MultipartHeader>(), Is.EqualTo(16));
         Assert.That(Unsafe.SizeOf<MultipartHeaderField>(), Is.EqualTo(16));
         Assert.That(Unsafe.SizeOf<MultipartSection>(), Is.EqualTo(16));
