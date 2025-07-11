@@ -24,7 +24,9 @@ internal class RFC5987EncodingTest
     public void TryDecodeUtf8InPlaceTest()
     {
         TryDecodeUtf8InPlaceTest("name%20%D0%B8%D0%BC%D1%8F.pdf"u8, "name имя.pdf"u8);
-        
+        TryDecodeUtf8InPlaceTest("%d0%b8%d0%bc%d1%8f.pdf"u8, "имя.pdf"u8);
+        TryDecodeUtf8InPlaceTest("myname"u8, "myname"u8);
+        TryDecodeUtf8InPlaceTest("%25D0"u8, "%D0"u8);
     }
 
     private static void TryParseTest(ReadOnlySpan<byte> bytes,

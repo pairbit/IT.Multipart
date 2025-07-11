@@ -45,4 +45,18 @@ internal class ContentDispositionHeaderValueTest
         Assert.That(mimeDecoded, Is.EqualTo(fileName));
 #endif
     }
+    
+    [Test]
+    public void tette()
+    {
+        var fileName = "%D0";
+
+        var header = new ContentDispositionHeaderValue("form-data");
+        header.Name = "name";
+        header.FileName = fileName;
+        header.FileNameStar = fileName;
+
+        var str = header.ToString();
+
+    }
 }
