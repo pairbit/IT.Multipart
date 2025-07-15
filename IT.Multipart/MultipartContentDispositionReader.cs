@@ -35,18 +35,18 @@ public ref struct MultipartContentDispositionReader
 
     public bool TryReadFileNameStar(out Range value) => _reader.TryReadNextValueByName("filename*"u8, out value);
 
-    public MultipartReadingStatus Read(out MultipartContentDisposition value)
+    public bool TryRead(out MultipartContentDisposition value)
     {
         if (!TryReadType(out var type) || type.Start.Value == type.End.Value)
         {
             value = default;
-            return MultipartReadingStatus.NotFound;
+            return false;
         }
 
         if (!_reader.TryReadNextField(out var field))
         {
             value = new() { Type = type };
-            return MultipartReadingStatus.Done;
+            return true;
         }
 
         Range name = default;
@@ -58,7 +58,7 @@ public ref struct MultipartContentDispositionReader
             if (!_reader.TryReadNextField(out field))
             {
                 value = new() { Type = type, Name = name };
-                return MultipartReadingStatus.Done;
+                return true;
             }
             fieldName = span[field.Name];
         }
@@ -70,7 +70,7 @@ public ref struct MultipartContentDispositionReader
             if (!_reader.TryReadNextField(out field))
             {
                 value = new() { Type = type, Name = name, FileName = fileName };
-                return MultipartReadingStatus.Done;
+                return true;
             }
             fieldName = span[field.Name];
         }
@@ -78,11 +78,11 @@ public ref struct MultipartContentDispositionReader
         if (fieldName.SequenceEqual("filename*"u8) && !_reader.TryReadNextValue(out _))
         {
             value = new() { Type = type, Name = name, FileName = fileName, FileNameStar = field.Value };
-            return MultipartReadingStatus.Done;
+            return true;
         }
 
         value = default;
-        return MultipartReadingStatus.NotMappedOrDuplicatedOrOrderWrong;
+        return false;
     }
 
     public bool TryFindName(out Range value) => _reader.TryFindValueByName("name"u8, out value);

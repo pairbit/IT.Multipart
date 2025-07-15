@@ -24,7 +24,7 @@ internal class MultipartContentDispositionReaderTest
         reader.Reset();
         Assert.That(reader.Offset, Is.Zero);
 
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.TryRead(out var cd), Is.True);
         Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
         Assert.That(span[cd.Name].SequenceEqual("transform"u8), Is.True);
         Assert.That(span[cd.FileName].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
@@ -36,7 +36,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data "u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.TryRead(out var cd), Is.True);
         Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
         Assert.That(cd.Name, Is.EqualTo(default(Range)));
         Assert.That(cd.FileName, Is.EqualTo(default(Range)));
@@ -48,7 +48,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; name=transform"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.TryRead(out var cd), Is.True);
         Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
         Assert.That(span[cd.Name].SequenceEqual("transform"u8), Is.True);
         Assert.That(cd.FileName, Is.EqualTo(default(Range)));
@@ -60,7 +60,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; filename=\"Transform;utf8.xsl\""u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.TryRead(out var cd), Is.True);
         Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
         Assert.That(cd.Name, Is.EqualTo(default(Range)));
         Assert.That(span[cd.FileName].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
@@ -72,7 +72,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; filename*=utf-8''file%20name.jpg"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.TryRead(out var cd), Is.True);
         Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
         Assert.That(cd.Name, Is.EqualTo(default(Range)));
         Assert.That(cd.FileName, Is.EqualTo(default(Range)));
@@ -84,7 +84,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; name=transform; filename=\"Transform;utf8.xsl\""u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.TryRead(out var cd), Is.True);
         Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
         Assert.That(span[cd.Name].SequenceEqual("transform"u8), Is.True);
         Assert.That(span[cd.FileName].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
@@ -96,7 +96,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; name=transform; filename*=utf-8''file%20name.jpg"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.TryRead(out var cd), Is.True);
         Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
         Assert.That(span[cd.Name].SequenceEqual("transform"u8), Is.True);
         Assert.That(cd.FileName, Is.EqualTo(default(Range)));
@@ -108,7 +108,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; filename=\"Transform;utf8.xsl\"; filename*=utf-8''file%20name.jpg"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.TryRead(out var cd), Is.True);
         Assert.That(span[cd.Type].SequenceEqual("form-data"u8), Is.True);
         Assert.That(cd.Name, Is.EqualTo(default(Range)));
         Assert.That(span[cd.FileName].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
@@ -120,10 +120,10 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = "  "u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.NotFound));
+        Assert.That(reader.TryRead(out var cd), Is.False);
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
 
-        Assert.That(reader.Read(out cd), Is.EqualTo(MultipartReadingStatus.NotFound));
+        Assert.That(reader.TryRead(out cd), Is.False);
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
     }
 
@@ -132,7 +132,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; name=transform; filename=\"Transform;utf8.xsl\"; filename*=utf-8''file%20name.jpg; notmapped=1"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.NotMappedOrDuplicatedOrOrderWrong));
+        Assert.That(reader.TryRead(out var cd), Is.False);
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
     }
 
@@ -141,7 +141,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; filename*=utf-8''file%20name.jpg; name=transform"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.NotMappedOrDuplicatedOrOrderWrong));
+        Assert.That(reader.TryRead(out var cd), Is.False);
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
     }
 
@@ -150,7 +150,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; filename=\"Transform;utf8.xsl\"; name=transform"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.NotMappedOrDuplicatedOrOrderWrong));
+        Assert.That(reader.TryRead(out var cd), Is.False);
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
     }
 
@@ -159,7 +159,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; form-data"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.NotMappedOrDuplicatedOrOrderWrong));
+        Assert.That(reader.TryRead(out var cd), Is.False);
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
     }
 
@@ -168,7 +168,7 @@ internal class MultipartContentDispositionReaderTest
     {
         var span = " form-data; name=\"Transform;utf8.xsl\"; name=transform"u8;
         var reader = new MultipartContentDispositionReader(span);
-        Assert.That(reader.Read(out var cd), Is.EqualTo(MultipartReadingStatus.NotMappedOrDuplicatedOrOrderWrong));
+        Assert.That(reader.TryRead(out var cd), Is.False);
         Assert.That(cd, Is.EqualTo(default(MultipartContentDisposition)));
     }
 
