@@ -13,6 +13,8 @@ public struct MultipartSequenceReader
 
     public readonly MultipartBoundary Boundary => _boundary;
 
+    public readonly SequencePosition Position => _position;
+
     public MultipartSequenceReader(MultipartBoundary boundary, ReadOnlySequence<byte> sequence)
     {
         _boundary = boundary;
