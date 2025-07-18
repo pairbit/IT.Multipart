@@ -7,7 +7,7 @@ public struct MultipartSequenceReader
 {
     private readonly MultipartBoundary _boundary;
     private readonly ReadOnlySequence<byte> _sequence;
-    //private int _offset;
+    private SequencePosition _position;
 
     public readonly ReadOnlySequence<byte> Sequence => _sequence;
 
@@ -17,6 +17,12 @@ public struct MultipartSequenceReader
     {
         _boundary = boundary;
         _sequence = sequence;
+        _position = sequence.Start;
+    }
+
+    public void Reset()
+    {
+        _position = _sequence.Start;
     }
 
     public bool TryReadNextSection(out MultipartSequenceSection section)

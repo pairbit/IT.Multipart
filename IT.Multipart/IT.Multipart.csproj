@@ -7,14 +7,14 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Company />
-    <Description>MultipartReader</Description>
+    <Description>MultipartSequenceReader</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/pairbit/IT.Multipart</RepositoryUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <Authors>Ivan Tikhonov</Authors>
     <Copyright>Ivan Tikhonov © 2025</Copyright>
-    <Version>2.0.5</Version>
-    <PackageTags>MultipartReader</PackageTags>
+    <Version>2.0.6</Version>
+    <PackageTags>MultipartReader MultipartSequenceReader</PackageTags>
     <PackageReadmeFile>Readme.md</PackageReadmeFile>
     <PackageIcon>Icon.png</PackageIcon>
     <PackageReleaseNotes></PackageReleaseNotes>
