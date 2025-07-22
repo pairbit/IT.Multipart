@@ -62,6 +62,8 @@ public struct MultipartSequenceReader
         {
             if (!sequence.StartsWith(End, ref end))
                 goto invalid;
+
+            end = _sequence.End;
         }
         sequence = sequence.Slice(position, bodyEnd);
 #if DEBUG
