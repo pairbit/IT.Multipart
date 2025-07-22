@@ -8,7 +8,7 @@ public ref struct MultipartReader
     private const byte Dash = (byte)'-';
     private const byte CR = (byte)'\r';
     private const byte LF = (byte)'\n';
-    private static readonly byte[] CRLFCRLF = [CR, LF, CR, LF];
+    internal static readonly byte[] CRLFCRLF = [CR, LF, CR, LF];
 
     private readonly ReadOnlySpan<byte> _span;
     private readonly ReadOnlySpan<byte> _boundary;

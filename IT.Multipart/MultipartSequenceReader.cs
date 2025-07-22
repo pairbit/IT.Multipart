@@ -1,15 +1,17 @@
-﻿using System;
+﻿using IT.Multipart.Internal;
+using System;
 using System.Buffers;
 using System.Diagnostics;
-using IT.Multipart.Internal;
 
 namespace IT.Multipart;
 
 public struct MultipartSequenceReader
 {
+    private const byte Dash = (byte)'-';
     private const byte CR = (byte)'\r';
     private const byte LF = (byte)'\n';
     private static readonly byte[] CRLF = [CR, LF];
+    private static readonly byte[] End = [Dash, Dash];
 
     private readonly MultipartBoundary _boundary;
     private readonly ReadOnlySequence<byte> _sequence;
@@ -36,13 +38,18 @@ public struct MultipartSequenceReader
     public bool TryReadNextSection(out MultipartSequenceSection section)
     {
         var sequence = _sequence;
+        var position = _position;
+        if (position.Equals(sequence.End))
+        {
+            section = default;
+            return false;
+        }
 #if DEBUG
         System.Text.Encoding.UTF8.TryGetString(sequence, out var utf8);
 #endif
-        var position = _position;
         var boundary = _boundary.Span;
         SequencePosition start = default;
-        if (sequence.Start.Equals(position))
+        if (position.Equals(sequence.Start))
         {
             Debug.Assert(boundary.Length > 2);
             start = sequence.PositionOfEnd(boundary.Slice(2));
@@ -65,38 +72,40 @@ public struct MultipartSequenceReader
 
         var bodyEnd = sequence.PositionOf(boundary);
         if (bodyEnd.IsNegative()) goto invalid;
-        //        var end = bodyEnd + boundaryLength + 2;
-        //        if (end > sequence.Length) goto invalid;
+
+        var end = sequence.GetPosition(boundary.Length, bodyEnd);
+        if (!IsEndBoundary(sequence.Slice(end))) goto invalid;
+        end = sequence.GetPosition(2, end);
+        sequence = sequence.Slice(sequence.Start, bodyEnd);
 #if DEBUG
-        System.Text.Encoding.UTF8.TryGetString(sequence.Slice(sequence.Start, bodyEnd), out utf8);
+        System.Text.Encoding.UTF8.TryGetString(sequence, out utf8);
 #endif
-        //        if (!IsEndBoundary(span[end - 2], span[end - 1])) goto invalid;
-        //        bodyEnd -= 2;
-        //        if (span[bodyEnd] != CR || span[bodyEnd + 1] != LF) goto invalid;
-        //        span = span.Slice(0, bodyEnd);
-        //#if DEBUG
-        //        utf8 = System.Text.Encoding.UTF8.GetString(span);
-        //#endif
-        //        var index = sequence.IndexOf(CRLFCRLF);
-        //        if (index < 0) throw MultipartReader.SeparatorNotFound();
-        //        start += offset;
-        //        index += start;
-        //        section = new MultipartSection
-        //        {
-        //            Headers = new(start, index),
-        //            Body = new(index + 4, bodyEnd + start)
-        //        };
-        //#if DEBUG
-        //        var headersUtf8 = System.Text.Encoding.UTF8.GetString(_span[section.Headers]);
-        //        var bodyUtf8 = System.Text.Encoding.UTF8.GetString(_span[section.Body]);
-        //#endif
-        //        _offset = end + start;
-        section = default;
+        var separator = sequence.PositionOf(MultipartReader.CRLFCRLF);
+        if (separator.IsNegative()) throw MultipartReader.SeparatorNotFound();
+        section = new MultipartSequenceSection(sequence, separator);
+#if DEBUG
+        System.Text.Encoding.UTF8.TryGetString(section.Headers, out var headersUtf8);
+        System.Text.Encoding.UTF8.TryGetString(section.Body, out var bodyUtf8);
+#endif
+        _position = end;
         return true;
 
     invalid:
         section = default;
         _position = _sequence.End;
         return false;
+    }
+
+    private static bool IsEndBoundary(ReadOnlySequence<byte> sequence)
+    {
+        if (sequence.Length < 2) return false;
+
+        sequence = sequence.Slice(sequence.Start, 2);
+
+#if DEBUG
+        System.Text.Encoding.UTF8.TryGetString(sequence, out var utf8);
+#endif
+
+        return sequence.SequenceEqual(CRLF) || sequence.SequenceEqual(End);
     }
 }

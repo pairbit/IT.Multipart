@@ -5,7 +5,7 @@ namespace IT.Multipart.Tests;
 
 internal class MultipartSequenceReaderTest
 {
-    //[Test]
+    [Test]
     public void TryReadNextSectionTest()
     {
         var span = "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8 +
