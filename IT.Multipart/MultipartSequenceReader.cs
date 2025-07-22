@@ -69,10 +69,10 @@ public struct MultipartSequenceReader
 #endif
         }
 
-        var bodyEnd = sequence.PositionOf(boundary);
+        var end = sequence.Start;
+        var bodyEnd = sequence.PositionOf(boundary, ref end);
         if (bodyEnd.IsNegative()) goto invalid;
 
-        var end = sequence.GetPosition(boundary.Length, bodyEnd);
         if (!IsEndBoundary(sequence.Slice(end))) goto invalid;
         end = sequence.GetPosition(2, end);
         sequence = sequence.Slice(sequence.Start, bodyEnd);
