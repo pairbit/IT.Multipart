@@ -58,9 +58,11 @@ public struct MultipartSequenceReader
         var end = position;
         var bodyEnd = sequence.PositionOf(boundary, ref end);
         if (bodyEnd.IsNegative()) goto invalid;
-
-        if (!IsEndBoundary(sequence.Slice(end))) goto invalid;
-        end = sequence.GetPosition(2, end);
+        if (!sequence.StartsWith(CRLF, ref end))
+        {
+            if (!sequence.StartsWith(End, ref end))
+                goto invalid;
+        }
         sequence = sequence.Slice(position, bodyEnd);
 #if DEBUG
         System.Text.Encoding.UTF8.TryGetString(sequence, out utf8);
@@ -79,18 +81,5 @@ public struct MultipartSequenceReader
         section = default;
         _position = _sequence.End;
         return false;
-    }
-
-    private static bool IsEndBoundary(ReadOnlySequence<byte> sequence)
-    {
-        if (sequence.Length < 2) return false;
-
-        sequence = sequence.Slice(sequence.Start, 2);
-
-#if DEBUG
-        System.Text.Encoding.UTF8.TryGetString(sequence, out var utf8);
-#endif
-
-        return sequence.SequenceEqual(CRLF) || sequence.SequenceEqual(End);
     }
 }
