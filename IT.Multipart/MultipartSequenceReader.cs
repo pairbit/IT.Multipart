@@ -44,38 +44,26 @@ public struct MultipartSequenceReader
             section = default;
             return false;
         }
-#if DEBUG
-        System.Text.Encoding.UTF8.TryGetString(sequence, out var utf8);
-#endif
         var boundary = _boundary.Span;
         if (position.Equals(sequence.Start))
         {
             Debug.Assert(boundary.Length > 2);
-            var start = sequence.PositionOfEnd(boundary.Slice(2));
-            if (start.IsNegative()) goto invalid;
+            position = sequence.PositionOfEnd(boundary.Slice(2));
+            if (position.IsNegative()) goto invalid;
             //TODO: заменить на sequence.StartsWith(CRLF, start)
-            if (!sequence.Slice(start, 2).SequenceEqual(CRLF)) goto invalid;
-            start = sequence.GetPosition(2, start);
-            sequence = sequence.Slice(start);
-#if DEBUG
-            System.Text.Encoding.UTF8.TryGetString(sequence, out utf8);
-#endif
+            if (!sequence.Slice(position, 2).SequenceEqual(CRLF)) goto invalid;
+            position = sequence.GetPosition(2, position);
         }
-        else
-        {
-            sequence = sequence.Slice(position);
 #if DEBUG
-            System.Text.Encoding.UTF8.TryGetString(sequence, out utf8);
+        System.Text.Encoding.UTF8.TryGetString(sequence.Slice(position), out var utf8);
 #endif
-        }
-
-        var end = sequence.Start;
+        var end = position;
         var bodyEnd = sequence.PositionOf(boundary, ref end);
         if (bodyEnd.IsNegative()) goto invalid;
 
         if (!IsEndBoundary(sequence.Slice(end))) goto invalid;
         end = sequence.GetPosition(2, end);
-        sequence = sequence.Slice(sequence.Start, bodyEnd);
+        sequence = sequence.Slice(position, bodyEnd);
 #if DEBUG
         System.Text.Encoding.UTF8.TryGetString(sequence, out utf8);
 #endif
