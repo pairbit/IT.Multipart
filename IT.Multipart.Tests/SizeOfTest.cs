@@ -14,6 +14,7 @@ internal class SizeOfTest
         Assert.That(Unsafe.SizeOf<MultipartSection>(), Is.EqualTo(16));
         Assert.That(Unsafe.SizeOf<MultipartContentDisposition>(), Is.EqualTo(32));
 
+        Assert.That(Unsafe.SizeOf<MultipartBoundary>(), Is.EqualTo(16));
         Assert.That(Unsafe.SizeOf<SequencePosition>(), Is.EqualTo(16));
 #if NET
         Assert.That(Unsafe.SizeOf<ReadOnlySequence<byte>>(), Is.EqualTo(24));
@@ -26,7 +27,6 @@ internal class SizeOfTest
 #endif
 
 #if NET9_0_OR_GREATER
-        Assert.That(Unsafe.SizeOf<MultipartBoundary>(), Is.EqualTo(16));
         Assert.That(Unsafe.SizeOf<MultipartHeadersReader>(), Is.EqualTo(24));
         Assert.That(Unsafe.SizeOf<MultipartHeaderFieldsReader>(), Is.EqualTo(24));
         Assert.That(Unsafe.SizeOf<MultipartReader>(), Is.EqualTo(40));
