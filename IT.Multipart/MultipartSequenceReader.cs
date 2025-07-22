@@ -51,9 +51,6 @@ public struct MultipartSequenceReader
             position = sequence.PositionOfEnd(boundary.Slice(2));
             if (position.IsNegative()) goto invalid;
             if (!sequence.StartsWith(CRLF, ref position)) goto invalid;
-            //TODO: заменить на 
-            //if (!sequence.Slice(position, 2).SequenceEqual(CRLF)) goto invalid;
-            //position = sequence.GetPosition(2, position);
         }
 #if DEBUG
         System.Text.Encoding.UTF8.TryGetString(sequence.Slice(position), out var utf8);
