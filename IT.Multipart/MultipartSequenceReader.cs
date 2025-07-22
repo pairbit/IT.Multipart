@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
 using IT.Multipart.Internal;
 
 namespace IT.Multipart;
@@ -34,21 +35,20 @@ public struct MultipartSequenceReader
 
     public bool TryReadNextSection(out MultipartSequenceSection section)
     {
-        var position = _position;
         var sequence = _sequence;
 #if DEBUG
         System.Text.Encoding.UTF8.TryGetString(sequence, out var utf8);
 #endif
-        var boundary = _boundary.Span;
-        var boundaryLength = boundary.Length;
+        var position = _position;
+        var boundary = _boundary.SpanWithPrefix;
         SequencePosition start = default;
         if (sequence.Start.Equals(position))
         {
-            start = sequence.PositionOfEnd(boundary);
+            Debug.Assert(boundary.Length > 3);
+            start = sequence.PositionOfEnd(boundary.Slice(2));
             if (start.IsNegative()) goto invalid;
-            //start += boundaryLength;
-            sequence = sequence.Slice(start);
-            if (sequence.Length <= 2 || !sequence.Slice(0, 2).SequenceEqual(CRLF)) goto invalid;
+            //TODO: заменить на sequence.StartsWith(CRLF, start)
+            if (!sequence.Slice(start, 2).SequenceEqual(CRLF)) goto invalid;
             start = sequence.GetPosition(2, start);
             sequence = sequence.Slice(start);
 #if DEBUG
@@ -63,13 +63,13 @@ public struct MultipartSequenceReader
 #endif
         }
 
-        //        var bodyEnd = sequence.IndexOf(boundary);
-        //        if (bodyEnd < 2) goto invalid;
+        var bodyEnd = sequence.PositionOf(boundary);
+        if (bodyEnd.IsNegative()) goto invalid;
         //        var end = bodyEnd + boundaryLength + 2;
         //        if (end > sequence.Length) goto invalid;
-        //#if DEBUG
-        //        utf8 = System.Text.Encoding.UTF8.GetString(sequence.Slice(0, end).ToArray());
-        //#endif
+#if DEBUG
+        System.Text.Encoding.UTF8.TryGetString(sequence.Slice(sequence.Start, bodyEnd), out utf8);
+#endif
         //        if (!IsEndBoundary(span[end - 2], span[end - 1])) goto invalid;
         //        bodyEnd -= 2;
         //        if (span[bodyEnd] != CR || span[bodyEnd + 1] != LF) goto invalid;

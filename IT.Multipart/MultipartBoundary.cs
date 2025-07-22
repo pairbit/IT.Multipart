@@ -7,16 +7,25 @@ namespace IT.Multipart;
 
 public readonly struct MultipartBoundary
 {
-    private const int PrefixLength = 2;
+    private const int PrefixLength = 4;
+    private static readonly byte[] Prefix = "\r\n--"u8.ToArray();
+
     public readonly ReadOnlyMemory<byte> _memory;
 
-    public ReadOnlySpan<byte> Span => _memory.Span;
+    public ReadOnlySpan<byte> Span => _memory.Span.Slice(2);
 
-    public ReadOnlyMemory<byte> Memory => _memory;
+    public ReadOnlyMemory<byte> Memory => _memory.Slice(2);
 
-    public MultipartBoundary(ReadOnlyMemory<byte> memory)
+    public ReadOnlySpan<byte> SpanWithPrefix => _memory.Span;
+
+    public ReadOnlyMemory<byte> MemoryWithPrefix => _memory;
+
+    public MultipartBoundary(ReadOnlyMemory<byte> boundary)
     {
-        _memory = memory;
+        var span = boundary.Span;
+        if (!span.StartsWith(Prefix)) throw new ArgumentException("Boundary must start with \\r\\n--", nameof(boundary));
+
+        _memory = boundary;
     }
 
     public static int GetMinCapacity(ReadOnlySpan<char> boundary) => boundary.Length + PrefixLength;
@@ -33,8 +42,10 @@ public readonly struct MultipartBoundary
 
         var memory = writer.GetMemory(utf8Length).Slice(0, utf8Length);
         var span = memory.Span;
-        span[0] = (byte)'-';
-        span[1] = (byte)'-';
+        span[0] = (byte)'\r';
+        span[1] = (byte)'\n';
+        span[2] = (byte)'-';
+        span[3] = (byte)'-';
 #if NET6_0_OR_GREATER
         var status = System.Text.Unicode.Utf8.FromUtf16(boundary, span.Slice(PrefixLength), out var readed, out var written);
         if (status != OperationStatus.Done) throw new InvalidOperationException($"Status is {status}");
