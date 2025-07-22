@@ -13,8 +13,8 @@ public struct MultipartSequenceReader
     private static readonly byte[] CRLF = [CR, LF];
     private static readonly byte[] End = [Dash, Dash];
 
-    private readonly MultipartBoundary _boundary;
     private readonly ReadOnlySequence<byte> _sequence;
+    private readonly MultipartBoundary _boundary;
     private SequencePosition _position;
 
     public readonly ReadOnlySequence<byte> Sequence => _sequence;
@@ -48,11 +48,10 @@ public struct MultipartSequenceReader
         System.Text.Encoding.UTF8.TryGetString(sequence, out var utf8);
 #endif
         var boundary = _boundary.Span;
-        SequencePosition start = default;
         if (position.Equals(sequence.Start))
         {
             Debug.Assert(boundary.Length > 2);
-            start = sequence.PositionOfEnd(boundary.Slice(2));
+            var start = sequence.PositionOfEnd(boundary.Slice(2));
             if (start.IsNegative()) goto invalid;
             //TODO: заменить на sequence.StartsWith(CRLF, start)
             if (!sequence.Slice(start, 2).SequenceEqual(CRLF)) goto invalid;

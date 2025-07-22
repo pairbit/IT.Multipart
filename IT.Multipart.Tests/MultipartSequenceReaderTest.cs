@@ -35,5 +35,8 @@ internal class MultipartSequenceReaderTest
 
         Assert.That(reader.TryReadNextSection(out section), Is.False);
         Assert.That(section, Is.EqualTo(default(MultipartSequenceSection)));
+
+        Assert.That(reader.TryReadNextSection(out section), Is.False);
+        Assert.That(section, Is.EqualTo(default(MultipartSequenceSection)));
     }
 }
