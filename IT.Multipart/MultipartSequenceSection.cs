@@ -10,5 +10,11 @@ public readonly struct MultipartSequenceSection
 
     public ReadOnlySequence<byte> Headers => _sequence.Slice(0, _position);
 
-    public ReadOnlySequence<byte> Body => _sequence.Slice(_position);
+    public ReadOnlySequence<byte> Body => _sequence.Slice(_sequence.GetPosition(4, _position));
+
+    public MultipartSequenceSection(ReadOnlySequence<byte> sequence, SequencePosition position)
+    {
+        _sequence = sequence;
+        _position = position;
+    }
 }
