@@ -13,11 +13,11 @@ internal class MultipartBoundaryTest
 
         var boundary = MultipartBoundary.FromStringSegment("\"----МойБоундари\"", writer);
 
-        Assert.That(Encoding.UTF8.GetString(boundary.Span), Is.EqualTo("------МойБоундари"));
+        Assert.That(Encoding.UTF8.GetString(boundary.Span), Is.EqualTo("\r\n------МойБоундари"));
 
         boundary = MultipartBoundary.FromStringSegment("\"----MyBoundary\"", writer);
 
-        Assert.That(Encoding.UTF8.GetString(boundary.Span), Is.EqualTo("------MyBoundary"));
+        Assert.That(Encoding.UTF8.GetString(boundary.Span), Is.EqualTo("\r\n------MyBoundary"));
     }
 }
 #endif

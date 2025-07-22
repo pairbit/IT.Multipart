@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace IT.Multipart;
 
@@ -19,8 +20,16 @@ public ref struct MultipartReader
 
     public readonly int Offset => _offset;
 
+    public MultipartReader(MultipartBoundary boundary, ReadOnlySpan<byte> span)
+    {
+        _boundary = boundary.Span;
+        _span = span;
+    }
+
     public MultipartReader(ReadOnlySpan<byte> boundary, ReadOnlySpan<byte> span)
     {
+        if (!MultipartBoundary.IsValid(boundary)) throw new ArgumentException("Boundary is invalid", nameof(boundary));
+
         _boundary = boundary;
         _span = span;
     }
@@ -48,9 +57,10 @@ public ref struct MultipartReader
         var start = 0;
         if (offset == 0)
         {
-            start = span.IndexOf(boundary);
+            Debug.Assert(boundaryLength > 2);
+            start = span.IndexOf(boundary.Slice(2));//del \r\n
             if (start < 0) goto invalid;
-            start += boundaryLength;
+            start += boundaryLength - 2;
             span = span.Slice(start);
             if (span.Length <= 2 || span[0] != CR || span[1] != LF) goto invalid;
             start += 2;
@@ -60,15 +70,15 @@ public ref struct MultipartReader
 #endif
         }
         var bodyEnd = span.IndexOf(boundary);
-        if (bodyEnd < 2) goto invalid;
+        if (bodyEnd < 0) goto invalid;
         var end = bodyEnd + boundaryLength + 2;
         if (end > span.Length) goto invalid;
 #if DEBUG
         spanUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, end));
 #endif
         if (!IsEndBoundary(span[end - 2], span[end - 1])) goto invalid;
-        bodyEnd -= 2;
-        if (span[bodyEnd] != CR || span[bodyEnd + 1] != LF) goto invalid;
+        //bodyEnd -= 2;
+        //if (span[bodyEnd] != CR || span[bodyEnd + 1] != LF) goto invalid;
         span = span.Slice(0, bodyEnd);
 #if DEBUG
         spanUtf8 = System.Text.Encoding.UTF8.GetString(span);

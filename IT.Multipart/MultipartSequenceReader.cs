@@ -40,11 +40,11 @@ public struct MultipartSequenceReader
         System.Text.Encoding.UTF8.TryGetString(sequence, out var utf8);
 #endif
         var position = _position;
-        var boundary = _boundary.SpanWithPrefix;
+        var boundary = _boundary.Span;
         SequencePosition start = default;
         if (sequence.Start.Equals(position))
         {
-            Debug.Assert(boundary.Length > 3);
+            Debug.Assert(boundary.Length > 2);
             start = sequence.PositionOfEnd(boundary.Slice(2));
             if (start.IsNegative()) goto invalid;
             //TODO: заменить на sequence.StartsWith(CRLF, start)

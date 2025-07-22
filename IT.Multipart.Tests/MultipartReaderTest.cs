@@ -16,7 +16,7 @@ internal class MultipartReaderTest
 "package name\r\n"u8 +
 "------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8 +
 "123\r\n"u8;
-        var boundary = new MultipartBoundary("\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8.ToArray()).Span;
+        var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
 
         Assert.That(reader.TryReadNextSection(out var section), Is.True);
@@ -59,7 +59,7 @@ internal class MultipartReaderTest
 "------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8 +
 "123\r\n"u8;
 
-        var boundary = new MultipartBoundary("\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8.ToArray()).Span;
+        var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
 
         Assert.That(reader.TryReadNextSectionByContentDisposition("attachment"u8, "data"u8, out var section), Is.True);
@@ -95,7 +95,7 @@ internal class MultipartReaderTest
 "------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8 +
 "123\r\n"u8;
 
-        var boundary = new MultipartBoundary("\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8.ToArray()).Span;
+        var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
 
         Assert.That(reader.TryFindSectionByContentDispositionFormData("data"u8, out var section), Is.True);
@@ -116,7 +116,7 @@ internal class MultipartReaderTest
     [Test]
     public void InvalidRead()
     {
-        var boundary = new MultipartBoundary("\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8.ToArray()).Span;
+        var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
 
         Assert.That(new MultipartReader(boundary,
             "------WebKit"u8)

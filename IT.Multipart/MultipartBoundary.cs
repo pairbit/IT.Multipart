@@ -12,21 +12,19 @@ public readonly struct MultipartBoundary
 
     public readonly ReadOnlyMemory<byte> _memory;
 
-    public ReadOnlySpan<byte> Span => _memory.Span.Slice(2);
+    public ReadOnlySpan<byte> Span => _memory.Span;
 
-    public ReadOnlyMemory<byte> Memory => _memory.Slice(2);
-
-    public ReadOnlySpan<byte> SpanWithPrefix => _memory.Span;
-
-    public ReadOnlyMemory<byte> MemoryWithPrefix => _memory;
+    public ReadOnlyMemory<byte> Memory => _memory;
 
     public MultipartBoundary(ReadOnlyMemory<byte> boundary)
     {
-        var span = boundary.Span;
-        if (!span.StartsWith(Prefix)) throw new ArgumentException("Boundary must start with \\r\\n--", nameof(boundary));
+        if (!IsValid(boundary.Span)) throw new ArgumentException("Boundary is invalid", nameof(boundary));
 
         _memory = boundary;
     }
+
+    public static bool IsValid(ReadOnlySpan<byte> boundary)
+        => boundary.StartsWith(Prefix);
 
     public static int GetMinCapacity(ReadOnlySpan<char> boundary) => boundary.Length + PrefixLength;
 
