@@ -76,7 +76,13 @@ public ref struct MultipartReader
 #if DEBUG
         spanUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, end));
 #endif
-        if (!IsEndBoundary(span[end - 2], span[end - 1])) goto invalid;
+        var first = span[end - 2];
+        var second = span[end - 1];
+        if (first != CR || second != LF)
+        {
+            if (first != Dash || second != Dash) goto invalid;
+            end = span.Length;
+        }
         //bodyEnd -= 2;
         //if (span[bodyEnd] != CR || span[bodyEnd + 1] != LF) goto invalid;
         span = span.Slice(0, bodyEnd);
@@ -185,8 +191,4 @@ public ref struct MultipartReader
 
     internal static InvalidOperationException SeparatorNotFound()
         => new("Invalid multipart section. Separator '\\r\\n\\r\\n' not found");
-
-    private static bool IsEndBoundary(byte first, byte second)
-        => first == Dash && second == Dash ||
-           first == CR && second == LF;
 }
