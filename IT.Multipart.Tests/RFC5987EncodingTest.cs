@@ -12,6 +12,7 @@ internal class RFC5987EncodingTest
         Assert.That("UTF-8"u8.IsUtf8(), Is.True);
         Assert.That("UTf-8"u8.IsUtf8(), Is.True);
         Assert.That("Utf-8"u8.IsUtf8(), Is.True);
+        Assert.That("UtF-8"u8.IsUtf8(), Is.True);
         Assert.That("uTF-8"u8.IsUtf8(), Is.True);
         Assert.That("uTf-8"u8.IsUtf8(), Is.True);
         Assert.That("utF-8"u8.IsUtf8(), Is.True);
@@ -19,6 +20,9 @@ internal class RFC5987EncodingTest
         Assert.That("utf-88"u8.IsUtf8(), Is.False);
         Assert.That("utf-7"u8.IsUtf8(), Is.False);
         Assert.That("utf+7"u8.IsUtf8(), Is.False);
+        Assert.That("atf-8"u8.IsUtf8(), Is.False);
+        Assert.That("ubf-8"u8.IsUtf8(), Is.False);
+        Assert.That("utc-8"u8.IsUtf8(), Is.False);
     }
 
     [Test]
