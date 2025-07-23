@@ -5,6 +5,23 @@ namespace IT.Multipart.Internal;
 
 internal static class xReadOnlySpan
 {
+    //UTF-8
+    public static bool IsUtf8(this ReadOnlySpan<byte> span)
+    {
+        if (span.Length != 5 || span[4] != '8' || span[3] != '-') return false;
+
+        var by = span[0];
+        if (by != 'u' && by != 'U') return false;
+
+        by = span[1];
+        if (by != 't' && by != 'T') return false;
+
+        by = span[2];
+        if (by != 'f' && by != 'F') return false;
+
+        return true;
+    }
+
     public static int IndexOfPart<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> value, out int length)
         where T : IEquatable<T>
 #if NET7_0_OR_GREATER

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IT.Multipart.Internal;
+using System;
 using System.Text;
 
 namespace IT.Multipart;
@@ -14,9 +15,6 @@ public static class RFC5987Encoding
     private const char QuoteChar = '\'';
     private const byte QuoteByte = (byte)QuoteChar;
     private const byte Percent = (byte)'%';
-
-    private static readonly byte[] utf8 = "utf-8"u8.ToArray();
-    private static readonly byte[] UTF8 = "UTF-8"u8.ToArray();
 
     // Attempt to decode using RFC 5987 encoding.
     // encoding'language'my%20string
@@ -100,7 +98,7 @@ public static class RFC5987Encoding
 
     public static bool TryDecodeInPlace(ReadOnlySpan<byte> encodingBytes, Span<byte> encoded, out int written)
     {
-        if (encodingBytes.SequenceEqual(utf8) || encodingBytes.SequenceEqual(UTF8))
+        if (encodingBytes.IsUtf8())
             return TryDecodeUtf8InPlace(encoded, out written);
 
         //Encoding.GetEncoding()
