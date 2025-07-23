@@ -16,8 +16,7 @@ internal class MultipartSequenceReaderTest
 "Content-Disposition: form-data; name=\"name\"\r\n"u8 +
 "\r\n"u8 +
 "package name\r\n"u8 +
-"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8 +
-"123\r\n"u8;
+"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8;
 
         var boundary = new MultipartBoundary("\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8.ToArray());
         var memory = span.ToArray().AsMemory();

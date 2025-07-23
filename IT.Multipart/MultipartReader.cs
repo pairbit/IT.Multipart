@@ -67,7 +67,7 @@ public ref struct MultipartReader
                 start = span.IndexOf(boundary.Slice(2));//del \r\n
                 if (start < 0) goto invalid;
             }
-            
+
             start += boundaryLength - 2;
             span = span.Slice(start);
             if (span.Length <= 2 || span[0] != CR || span[1] != LF) goto invalid;
@@ -100,8 +100,6 @@ public ref struct MultipartReader
                 end = span.Length;
             }
         }
-        //bodyEnd -= 2;
-        //if (span[bodyEnd] != CR || span[bodyEnd + 1] != LF) goto invalid;
         span = span.Slice(0, bodyEnd);
 #if DEBUG
         spanUtf8 = System.Text.Encoding.UTF8.GetString(span);

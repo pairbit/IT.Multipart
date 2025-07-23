@@ -35,7 +35,7 @@ public struct MultipartSequenceReader
         _position = _sequence.Start;
     }
 
-    public bool TryReadNextSection(out MultipartSequenceSection section)
+    public bool TryReadNextSection(out MultipartSequenceSection section, bool isStrict = true)
     {
         var sequence = _sequence;
         var position = _position;
@@ -48,8 +48,15 @@ public struct MultipartSequenceReader
         if (position.Equals(sequence.Start))
         {
             Debug.Assert(boundary.Length > 2);
-            position = sequence.PositionOfEnd(boundary.Slice(2));
-            if (position.IsNegative()) goto invalid;
+            if (isStrict)
+            {
+                if (!sequence.StartsWith(boundary.Slice(2), ref position)) goto invalid;
+            }
+            else
+            {
+                position = sequence.PositionOfEnd(boundary.Slice(2));
+                if (position.IsNegative()) goto invalid;
+            }
             if (!sequence.StartsWith(CRLF, ref position)) goto invalid;
         }
 #if DEBUG
@@ -63,7 +70,15 @@ public struct MultipartSequenceReader
             if (!sequence.StartsWith(End, ref end))
                 goto invalid;
 
-            end = _sequence.End;
+            if (isStrict)
+            {
+                if (!sequence.StartsWith(CRLF, ref end)) goto invalid;
+                if (!end.Equals(_sequence.End)) goto invalid;
+            }
+            else
+            {
+                end = _sequence.End;
+            }
         }
         sequence = sequence.Slice(position, bodyEnd);
 #if DEBUG
