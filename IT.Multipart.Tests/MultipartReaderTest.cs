@@ -14,8 +14,7 @@ internal class MultipartReaderTest
 "Content-Disposition: form-data; name=\"name\"\r\n"u8 +
 "\r\n"u8 +
 "package name\r\n"u8 +
-"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8 +
-"123\r\n"u8;
+"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8;
         var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
 
@@ -30,7 +29,7 @@ internal class MultipartReaderTest
         Assert.That(reader.TryReadNextSection(out section), Is.False);
         Assert.That(section, Is.EqualTo(default(MultipartSection)));
 
-        span = "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--"u8;
+        span = "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8;
         reader = new MultipartReader(boundary, span);
         Assert.That(reader.TryReadNextSection(out section), Is.True);
         Assert.That(span[section.Headers].IsEmpty, Is.True);
@@ -56,8 +55,7 @@ internal class MultipartReaderTest
 "Content-Disposition: form-data; name=\"name\"\r\n"u8 +
 "\r\n"u8 +
 "package name\r\n"u8 +
-"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8 +
-"123\r\n"u8;
+"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8;
 
         var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
@@ -92,8 +90,7 @@ internal class MultipartReaderTest
 "Content-Disposition: form-data; name=\"name\"\r\n"u8 +
 "\r\n"u8 +
 "package name\r\n"u8 +
-"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8 +
-"123\r\n"u8;
+"------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8;
 
         var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
@@ -178,7 +175,7 @@ internal class MultipartReaderTest
         try
         {
             new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--"u8)
+            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8)
             .TryReadNextSection(out section);
             Assert.Fail();
         }

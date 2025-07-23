@@ -39,7 +39,7 @@ public ref struct MultipartReader
         _offset = 0;
     }
 
-    public bool TryReadNextSection(out MultipartSection section)
+    public bool TryReadNextSection(out MultipartSection section, bool isStrict = true)
     {
         var offset = _offset;
         var span = _span;
@@ -58,8 +58,16 @@ public ref struct MultipartReader
         if (offset == 0)
         {
             Debug.Assert(boundaryLength > 2);
-            start = span.IndexOf(boundary.Slice(2));//del \r\n
-            if (start < 0) goto invalid;
+            if (isStrict)
+            {
+                if (!span.StartsWith(boundary.Slice(2))) goto invalid;
+            }
+            else
+            {
+                start = span.IndexOf(boundary.Slice(2));//del \r\n
+                if (start < 0) goto invalid;
+            }
+            
             start += boundaryLength - 2;
             span = span.Slice(start);
             if (span.Length <= 2 || span[0] != CR || span[1] != LF) goto invalid;
@@ -81,7 +89,16 @@ public ref struct MultipartReader
         if (first != CR || second != LF)
         {
             if (first != Dash || second != Dash) goto invalid;
-            end = span.Length;
+            if (isStrict)
+            {
+                end += 2;
+                if (end != span.Length) goto invalid;
+                if (span[end - 2] != CR || span[end - 1] != LF) goto invalid;
+            }
+            else
+            {
+                end = span.Length;
+            }
         }
         //bodyEnd -= 2;
         //if (span[bodyEnd] != CR || span[bodyEnd + 1] != LF) goto invalid;
