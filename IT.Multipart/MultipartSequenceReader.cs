@@ -73,12 +73,9 @@ public struct MultipartSequenceReader
             if (isStrict)
             {
                 if (!sequence.StartsWith(CRLF, ref end)) goto invalid;
-                if (!end.Equals(_sequence.End)) goto invalid;
+                if (sequence.TryGet(ref end, out var mem) && !mem.IsEmpty) goto invalid;
             }
-            else
-            {
-                end = _sequence.End;
-            }
+            end = _sequence.End;
         }
         sequence = sequence.Slice(position, bodyEnd);
 #if DEBUG
