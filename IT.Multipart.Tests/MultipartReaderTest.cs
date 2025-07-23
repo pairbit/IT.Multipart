@@ -3,6 +3,43 @@
 internal class MultipartReaderTest
 {
     [Test]
+    public void TryReadNextSectionNoStrictTest()
+    {
+        var span = "[[[[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8 +
+"Content-Disposition: form-data; name=transform; filename=\"Transform;utf8.xsl\"\r\n"u8 +
+"Content-Type: text/xml\r\n"u8 +
+"\r\n"u8 +
+"<data>mydata</data>\r\n"u8 +
+"------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8 +
+"Content-Disposition: form-data; name=\"name\"\r\n"u8 +
+"\r\n"u8 +
+"package name\r\n"u8 +
+"------WebKitFormBoundarylng3rD4syfIK3fT9--]]]]"u8;
+        var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
+        var reader = new MultipartReader(boundary, span);
+
+        Assert.That(reader.TryReadNextSection(out var section, isStrict: false), Is.True);
+        Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=transform; filename=\"Transform;utf8.xsl\"\r\nContent-Type: text/xml"u8), Is.True);
+        Assert.That(span[section.Body].SequenceEqual("<data>mydata</data>"u8), Is.True);
+
+        Assert.That(reader.TryReadNextSection(out section, isStrict: false), Is.True);
+        Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=\"name\""u8), Is.True);
+        Assert.That(span[section.Body].SequenceEqual("package name"u8), Is.True);
+
+        Assert.That(reader.TryReadNextSection(out section, isStrict: false), Is.False);
+        Assert.That(section, Is.EqualTo(default(MultipartSection)));
+
+        span = "[[[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--]]]"u8;
+        reader = new MultipartReader(boundary, span);
+        Assert.That(reader.TryReadNextSection(out section, isStrict: false), Is.True);
+        Assert.That(span[section.Headers].IsEmpty, Is.True);
+        Assert.That(span[section.Body].IsEmpty, Is.True);
+
+        Assert.That(reader.TryReadNextSection(out _), Is.False);
+    }
+
+
+    [Test]
     public void TryReadNextSectionTest()
     {
         var span = "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8 +
