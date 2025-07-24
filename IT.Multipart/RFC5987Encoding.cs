@@ -12,6 +12,7 @@ namespace IT.Multipart;
 //title*=utf-8''%e2%82%ac%20exchange%20rates
 public static class RFC5987Encoding
 {
+    private const int CodePageUTF8 = 65001;
     private const char QuoteChar = '\'';
     private const byte QuoteByte = (byte)QuoteChar;
     private const byte Percent = (byte)'%';
@@ -108,11 +109,40 @@ public static class RFC5987Encoding
 
     internal static bool TryDecodeInPlace(Encoding encoding, Span<byte> encoded, out int written)
     {
-        if (!TryDecodeUtf8InPlace(encoded, out written))
-            return false;
+        if (encoding == null) throw new ArgumentNullException(nameof(encoding));
+        if (encoding.CodePage == CodePageUTF8)
+            return TryDecodeUtf8InPlace(encoded, out written);
 
         //encoding.get
         throw new NotImplementedException();
+    }
+
+    public static bool TryDecodeUtf8(ReadOnlySpan<byte> encoded, Span<byte> decoded, out int written)
+    {
+#if DEBUG
+        var encodedUtf8 = Encoding.UTF8.GetString(encoded);
+#endif
+        written = 0;
+        for (int i = 0; i < encoded.Length; i++)
+        {
+            var by = encoded[i];
+            if (by == Percent) // %FF
+            {
+                if (!TryDecodeHex(encoded[i + 1], encoded[i + 2], out var utf8))
+                    return false;
+
+                decoded[written++] = utf8;
+                i += 2;
+            }
+            else
+            {
+                decoded[written++] = by;
+            }
+        }
+#if DEBUG
+        var decodedUtf8 = Encoding.UTF8.GetString(decoded.Slice(0, written));
+#endif
+        return true;
     }
 
     public static bool TryDecodeUtf8InPlace(Span<byte> encoded, out int written)
@@ -134,7 +164,7 @@ public static class RFC5987Encoding
             }
             else
             {
-                encoded[written++] = encoded[i];
+                encoded[written++] = by;
             }
         }
 #if DEBUG

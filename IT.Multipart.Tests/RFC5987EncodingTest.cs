@@ -44,12 +44,12 @@ internal class RFC5987EncodingTest
     [Test]
     public void TryDecodeUtf8InPlaceTest()
     {
-        TryDecodeUtf8InPlaceTest("name%20%D0%B8%D0%BC%D1%8F.pdf"u8, "name имя.pdf"u8);
-        TryDecodeUtf8InPlaceTest("%d0%b8%d0%bc%d1%8f.pdf"u8, "имя.pdf"u8);
-        TryDecodeUtf8InPlaceTest("myname"u8, "myname"u8);
-        TryDecodeUtf8InPlaceTest("%25D0"u8, "%D0"u8);
-        TryDecodeUtf8InPlaceTest("%e2%82%ac%20exchange%20rates"u8, "€ exchange rates"u8);
-        //TryDecodeUtf8InPlaceTest("%A3%20rates"u8, "£ rates"u8);
+        TryDecodeUtf8Test("name%20%D0%B8%D0%BC%D1%8F.pdf"u8, "name имя.pdf"u8);
+        TryDecodeUtf8Test("%d0%b8%d0%bc%d1%8f.pdf"u8, "имя.pdf"u8);
+        TryDecodeUtf8Test("myname"u8, "myname"u8);
+        TryDecodeUtf8Test("%25D0"u8, "%D0"u8);
+        TryDecodeUtf8Test("%e2%82%ac%20exchange%20rates"u8, "€ exchange rates"u8);
+        //TryDecodeUtf8Test("%A3%20rates"u8, "£ rates"u8);
     }
 
     //[Test]
@@ -82,13 +82,19 @@ internal class RFC5987EncodingTest
         Assert.That(bytes.Slice(rfc5987.EncodedStart).SequenceEqual(encoded), Is.True);
     }
 
-    private static void TryDecodeUtf8InPlaceTest(ReadOnlySpan<byte> encoded, ReadOnlySpan<byte> decoded)
+    private static void TryDecodeUtf8Test(ReadOnlySpan<byte> encoded, ReadOnlySpan<byte> decoded)
     {
-        var buffer = encoded.ToArray();
-        Assert.That(RFC5987Encoding.TryDecodeUtf8InPlace(buffer, out var written), Is.True);
+        var decodedBuffer = new byte[encoded.Length];
+        Assert.That(RFC5987Encoding.TryDecodeUtf8(encoded, decodedBuffer, out var written), Is.True);
 
-        if (!buffer.AsSpan(0, written).SequenceEqual(decoded))
-            Assert.Fail(Encoding.UTF8.GetString(buffer.AsSpan(0, written)));
+        if (!decodedBuffer.AsSpan(0, written).SequenceEqual(decoded))
+            Assert.Fail(Encoding.UTF8.GetString(decodedBuffer.AsSpan(0, written)));
+
+        var encodedBuffer = encoded.ToArray();
+        Assert.That(RFC5987Encoding.TryDecodeUtf8InPlace(encodedBuffer, out written), Is.True);
+
+        if (!encodedBuffer.AsSpan(0, written).SequenceEqual(decoded))
+            Assert.Fail(Encoding.UTF8.GetString(encodedBuffer.AsSpan(0, written)));
     }
 
     private static void TryDecodeInPlaceTest(Encoding encoding, ReadOnlySpan<byte> encoded, ReadOnlySpan<byte> decoded)
