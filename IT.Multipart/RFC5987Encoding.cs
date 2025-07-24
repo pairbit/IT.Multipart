@@ -1,5 +1,6 @@
 ﻿using IT.Multipart.Internal;
 using System;
+using System.Buffers;
 using System.Text;
 
 namespace IT.Multipart;
@@ -114,6 +115,14 @@ public static class RFC5987Encoding
             return TryDecodeUtf8InPlace(encoded, out written);
 
         //encoding.get
+        throw new NotImplementedException();
+    }
+
+    internal static bool TryDecodeUtf8(ReadOnlySequence<byte> encoded, Span<byte> decoded, out int written)
+    {
+#if DEBUG
+        Encoding.UTF8.TryGetString(encoded, out var encodedUtf8);
+#endif
         throw new NotImplementedException();
     }
 
