@@ -2,6 +2,8 @@
 
 internal class MultipartReaderTest
 {
+    private readonly static MultipartBoundary Boundary = new("\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8.ToArray());
+
     [Test]
     public void ReadNextSectionNoStrictTest()
     {
@@ -77,72 +79,28 @@ internal class MultipartReaderTest
     [Test]
     public void ReadNextSectionInvalid()
     {
-        var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKit"u8).ReadNextSection(out var section), 
-            Is.EqualTo(MultipartReadingStatus.StartBoundaryNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9"u8)
-            .ReadNextSection(out section), 
-            Is.EqualTo(MultipartReadingStatus.StartBoundaryCRLFNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r  "u8)
-            .ReadNextSection(out section), 
-            Is.EqualTo(MultipartReadingStatus.StartBoundaryCRLFNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n "u8)
-            .ReadNextSection(out section), 
-            Is.EqualTo(MultipartReadingStatus.BoundaryNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8)
-            .ReadNextSection(out section), 
-            Is.EqualTo(MultipartReadingStatus.BoundaryNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9"u8)
-            .ReadNextSection(out section),
-            Is.EqualTo(MultipartReadingStatus.BoundaryNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9  "u8)
-            .ReadNextSection(out section),
-            Is.EqualTo(MultipartReadingStatus.BoundaryNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8)
-            .ReadNextSection(out section), 
-            Is.EqualTo(MultipartReadingStatus.BoundaryNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9--"u8)
-            .ReadNextSection(out section), 
-            Is.EqualTo(MultipartReadingStatus.BoundaryNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8)
-            .ReadNextSection(out section),
-            Is.EqualTo(MultipartReadingStatus.SectionSeparatorNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
-
-        Assert.That(new MultipartReader(boundary,
-            "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8)
-            .ReadNextSection(out section),
-            Is.EqualTo(MultipartReadingStatus.SectionSeparatorNotFound));
-        Assert.That(section, Is.EqualTo(default(MultipartSection)));
+        ReadNextSectionInvalid("------WebKit"u8, 
+            MultipartReadingStatus.StartBoundaryNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9"u8, 
+            MultipartReadingStatus.StartBoundaryCRLFNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r  "u8, 
+            MultipartReadingStatus.StartBoundaryCRLFNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n "u8, 
+            MultipartReadingStatus.BoundaryNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8, 
+            MultipartReadingStatus.BoundaryNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9"u8, 
+            MultipartReadingStatus.BoundaryNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9  "u8, 
+            MultipartReadingStatus.BoundaryNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8, 
+            MultipartReadingStatus.BoundaryNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9--"u8, 
+            MultipartReadingStatus.BoundaryNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8, 
+            MultipartReadingStatus.SectionSeparatorNotFound);
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8, 
+            MultipartReadingStatus.SectionSeparatorNotFound);
     }
 
     [Test]
@@ -366,5 +324,19 @@ internal class MultipartReaderTest
         var reader = new MultipartReader(boundary, "------WebKit"u8);
         Assert.That(reader.TryReadNextSection(out _), Is.False);
         Assert.That(reader.TryReadNextSection(out _), Is.False);
+    }
+
+    private static void ReadNextSectionInvalid(ReadOnlySpan<byte> span, MultipartReadingStatus invalidStatus)
+    {
+        Assert.That((sbyte)invalidStatus, Is.LessThan(0));
+
+        var reader = new MultipartReader(Boundary, span);
+        Assert.That(reader.ReadNextSection(out var section), Is.EqualTo(invalidStatus));
+        Assert.That(section, Is.EqualTo(default(MultipartSection)));
+
+        Assert.That(reader.Offset, Is.EqualTo((int)invalidStatus));
+
+        Assert.That(reader.ReadNextSection(out section), Is.EqualTo(invalidStatus));
+        Assert.That(section, Is.EqualTo(default(MultipartSection)));
     }
 }
