@@ -42,6 +42,11 @@ public ref struct MultipartReader
     public MultipartReadingStatus ReadNextSection(out MultipartSection section, bool isStrict = true)
     {
         var offset = _offset;
+        if (offset < 0)
+        {
+            section = default;
+            return (MultipartReadingStatus)checked((sbyte)offset);
+        }
         var span = _span;
         if (span.Length <= offset)
         {
@@ -60,17 +65,32 @@ public ref struct MultipartReader
             Debug.Assert(boundaryLength > 2);
             if (isStrict)
             {
-                if (!span.StartsWith(boundary.Slice(2))) goto invalid;
+                if (!span.StartsWith(boundary.Slice(2)))
+                {
+                    _offset = (int)MultipartReadingStatus.StartBoundaryNotFound;
+                    section = default;
+                    return MultipartReadingStatus.StartBoundaryNotFound;
+                }
             }
             else
             {
                 start = span.IndexOf(boundary.Slice(2));//del \r\n
-                if (start < 0) goto invalid;
+                if (start < 0)
+                {
+                    _offset = (int)MultipartReadingStatus.StartBoundaryNotFound;
+                    section = default;
+                    return MultipartReadingStatus.StartBoundaryNotFound;
+                }
             }
 
             start += boundaryLength - 2;
             span = span.Slice(start);
-            if (span.Length <= 2 || span[0] != CR || span[1] != LF) goto invalid;
+            if (span.Length <= 2 || span[0] != CR || span[1] != LF)
+            {
+                _offset = (int)MultipartReadingStatus.StartBoundaryCRLFNotFound;
+                section = default;
+                return MultipartReadingStatus.StartBoundaryCRLFNotFound;
+            }
             start += 2;
             span = span.Slice(2);
 #if DEBUG
@@ -78,9 +98,19 @@ public ref struct MultipartReader
 #endif
         }
         var bodyEnd = span.IndexOf(boundary);
-        if (bodyEnd < 0) goto invalid;
+        if (bodyEnd < 0)
+        {
+            _offset = (int)MultipartReadingStatus.BoundaryNotFound;
+            section = default;
+            return MultipartReadingStatus.BoundaryNotFound;
+        }
         var end = bodyEnd + boundaryLength + 2;
-        if (end > span.Length) goto invalid;
+        if (end > span.Length)
+        {
+            _offset = (int)MultipartReadingStatus.EndBoundaryNotFound;
+            section = default;
+            return MultipartReadingStatus.EndBoundaryNotFound;
+        }
 #if DEBUG
         spanUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, end));
 #endif
@@ -88,12 +118,21 @@ public ref struct MultipartReader
         var second = span[end - 1];
         if (first != CR || second != LF)
         {
-            if (first != Dash || second != Dash) goto invalid;
+            if (first != Dash || second != Dash)
+            {
+                _offset = (int)MultipartReadingStatus.EndBoundaryNotFound;
+                section = default;
+                return MultipartReadingStatus.EndBoundaryNotFound;
+            }
             if (isStrict)
             {
                 end += 2;
-                if (end != span.Length) goto invalid;
-                if (span[end - 2] != CR || span[end - 1] != LF) goto invalid;
+                if (end != span.Length || span[end - 2] != CR || span[end - 1] != LF)
+                {
+                    _offset = (int)MultipartReadingStatus.EndBoundaryNotFound;
+                    section = default;
+                    return MultipartReadingStatus.EndBoundaryNotFound;
+                }
             }
             else
             {
@@ -107,6 +146,7 @@ public ref struct MultipartReader
         var index = span.IndexOf(CRLFCRLF);
         if (index < 0)
         {
+            _offset = (int)MultipartReadingStatus.SectionSeparatorNotFound;
             section = default;
             return MultipartReadingStatus.SectionSeparatorNotFound;
         }
@@ -123,11 +163,6 @@ public ref struct MultipartReader
 #endif
         _offset = end + start;
         return MultipartReadingStatus.Done;
-
-    invalid:
-        section = default;
-        _offset = _span.Length;
-        return MultipartReadingStatus.End;
     }
 
     public bool TryReadNextSection(out MultipartSection section, bool isStrict = true)
