@@ -81,12 +81,13 @@ internal class MultipartHeadersReaderTest
         Assert.That(reader.ReadNextHeader(out header), Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[header.Name].SequenceEqual("empty2"u8), Is.True);
         Assert.That(span[header.Value].IsEmpty, Is.True);
+    }
 
-        Assert.That(new MultipartHeadersReader("form-data"u8).ReadNextHeader(out header),
-            Is.EqualTo(MultipartReadingStatus.HeaderSeparatorNotFound));
-
-        Assert.That(new MultipartHeadersReader(": form-data"u8).ReadNextHeader(out header),
-            Is.EqualTo(MultipartReadingStatus.HeaderNameNotFound));
+    [Test]
+    public void ReadNextHeaderInvalidTest()
+    {
+        ReadNextHeaderInvalid("form-data"u8, MultipartReadingStatus.HeaderSeparatorNotFound);
+        ReadNextHeaderInvalid(": form-data"u8, MultipartReadingStatus.HeaderNameNotFound);
     }
 
     [Test]
@@ -172,5 +173,20 @@ internal class MultipartHeadersReaderTest
         {
             Assert.That(ex.Message, Is.EqualTo(MultipartHeadersReader.NameNotFound().Message));
         }
+    }
+
+    private static void ReadNextHeaderInvalid(ReadOnlySpan<byte> span, MultipartReadingStatus invalidStatus, bool trimValue = true)
+    {
+        var offset = (int)invalidStatus;
+        Assert.That(offset, Is.LessThan(0));
+
+        var reader = new MultipartHeadersReader(span);
+        Assert.That(reader.ReadNextHeader(out var section, trimValue), Is.EqualTo(invalidStatus));
+        Assert.That(section, Is.EqualTo(default(MultipartHeader)));
+
+        Assert.That(reader.Offset, Is.EqualTo(offset));
+
+        Assert.That(reader.ReadNextHeader(out section, trimValue), Is.EqualTo(invalidStatus));
+        Assert.That(section, Is.EqualTo(default(MultipartHeader)));
     }
 }
