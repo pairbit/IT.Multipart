@@ -69,6 +69,104 @@ public ref struct MultipartHeaderFieldsReader
         return true;
     }
 
+    public MultipartReadingStatus ReadNextField(out MultipartHeaderField field)
+    {
+        if (!TryReadNextValue(out var value))
+        {
+            field = default;
+            return MultipartReadingStatus.End;
+        }
+        var span = _span[value];
+#if DEBUG
+        var spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
+#endif
+        var nameSep = span.IndexOf(NameSep);
+        if (nameSep < 0)
+        {
+            field = new() { Value = value };
+        }
+        else
+        {
+            if (nameSep == 0)
+            {
+                field = default;
+                return MultipartReadingStatus.HeaderFieldNameNotFound;
+            }
+#if DEBUG
+            var nameUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, nameSep));
+#endif
+            var nameEnd = nameSep - 1;
+            for (; nameEnd >= 0; nameEnd--)
+            {
+                if (!IsWhiteSpace(span[nameEnd])) break;
+            }
+            nameEnd++;
+            if (nameEnd == 0)
+            {
+                field = default;
+                return MultipartReadingStatus.HeaderFieldNameNotFound;
+            }
+#if DEBUG
+            nameUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, nameEnd));
+#endif
+            var valueStart = nameSep + 1;
+#if DEBUG
+            var valueUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(valueStart));
+#endif
+            for (; valueStart < span.Length; valueStart++)
+            {
+                if (!IsWhiteSpace(span[valueStart])) break;
+            }
+#if DEBUG
+            valueUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(valueStart));
+#endif
+            var nameStart = value.Start.Value;
+            var valueEnd = span.Length;
+            if (span[valueStart] == Quote)
+            {
+                valueEnd = span[valueEnd - 1] == Quote ? valueEnd + nameStart - 1 : ReadNextQuote() - 1;
+                valueStart++;
+            }
+            else
+            {
+                valueEnd += nameStart;
+            }
+            field = new()
+            {
+                Name = new(nameStart, nameEnd + nameStart),
+                Value = new(valueStart + nameStart, valueEnd)
+            };
+#if DEBUG
+            nameUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Name]);
+            valueUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Value]);
+#endif
+        }
+        return MultipartReadingStatus.Done;
+    }
+
+    public MultipartReadingStatus ReadNextValueByName(ReadOnlySpan<byte> name, out Range value)
+    {
+        var status = ReadNextField(out var field);
+        if (status != MultipartReadingStatus.Done)
+        {
+            value = default;
+            return status;
+        }
+
+#if DEBUG
+        var nameUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Name]);
+        var valueUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Value]);
+#endif
+        if (!_span[field.Name].SequenceEqual(name))
+        {
+            value = default;
+            return MultipartReadingStatus.HeaderFieldNameNotSame;
+        }
+
+        value = field.Value;
+        return MultipartReadingStatus.Done;
+    }
+
     public bool TryReadNextField(out MultipartHeaderField field)
     {
         if (!TryReadNextValue(out var value))
