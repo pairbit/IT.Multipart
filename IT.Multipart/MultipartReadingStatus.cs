@@ -3,8 +3,8 @@
 public enum MultipartReadingStatus : sbyte
 {
     HeaderFieldNameNotFound = -20,
-    HeaderSeparatorNotFound = -11,
-    HeaderNameNotFound = -10,
+    HeaderNameNotFound = -11,
+    HeaderSeparatorNotFound = -10,
     SectionSeparatorNotFound = -5,
     EndBoundaryNotFound = -4,
     BoundaryNotFound = -3,
