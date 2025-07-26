@@ -77,9 +77,38 @@ internal class MultipartReaderTest
     }
 
     [Test]
+    public void ReadNextSectionNoStrictInvalid()
+    {
+        ReadNextSectionInvalid("[------WebKit"u8,
+            MultipartReadingStatus.StartBoundaryNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9"u8,
+            MultipartReadingStatus.StartBoundaryCRLFNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r  "u8,
+            MultipartReadingStatus.StartBoundaryCRLFNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n "u8,
+            MultipartReadingStatus.BoundaryNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8,
+            MultipartReadingStatus.BoundaryNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8,
+            MultipartReadingStatus.EndBoundaryNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9  "u8,
+            MultipartReadingStatus.EndBoundaryNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--"u8,
+            MultipartReadingStatus.SectionSeparatorNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--  "u8,
+            MultipartReadingStatus.SectionSeparatorNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8,
+            MultipartReadingStatus.SectionSeparatorNotFound, isStrict: false);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8,
+            MultipartReadingStatus.SectionSeparatorNotFound, isStrict: false);
+    }
+
+    [Test]
     public void ReadNextSectionInvalid()
     {
         ReadNextSectionInvalid("------WebKit"u8,
+            MultipartReadingStatus.StartBoundaryNotFound);
+        ReadNextSectionInvalid("[------WebKitFormBoundarylng3rD4syfIK3fT9"u8,
             MultipartReadingStatus.StartBoundaryNotFound);
         ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9"u8,
             MultipartReadingStatus.StartBoundaryCRLFNotFound);
