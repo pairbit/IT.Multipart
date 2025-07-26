@@ -79,27 +79,27 @@ internal class MultipartReaderTest
     [Test]
     public void ReadNextSectionInvalid()
     {
-        ReadNextSectionInvalid("------WebKit"u8, 
+        ReadNextSectionInvalid("------WebKit"u8,
             MultipartReadingStatus.StartBoundaryNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9"u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9"u8,
             MultipartReadingStatus.StartBoundaryCRLFNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r  "u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r  "u8,
             MultipartReadingStatus.StartBoundaryCRLFNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n "u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n "u8,
             MultipartReadingStatus.BoundaryNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8,
             MultipartReadingStatus.BoundaryNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9"u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9"u8,
             MultipartReadingStatus.BoundaryNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9  "u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9  "u8,
             MultipartReadingStatus.BoundaryNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8,
             MultipartReadingStatus.BoundaryNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9--"u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n  ------WebKitFormBoundarylng3rD4syfIK3fT9--"u8,
             MultipartReadingStatus.BoundaryNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9\r\n"u8,
             MultipartReadingStatus.SectionSeparatorNotFound);
-        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8, 
+        ReadNextSectionInvalid("------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8,
             MultipartReadingStatus.SectionSeparatorNotFound);
     }
 
