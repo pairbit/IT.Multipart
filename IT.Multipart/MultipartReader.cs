@@ -39,6 +39,97 @@ public ref struct MultipartReader
         _offset = 0;
     }
 
+    public MultipartReadingStatus ReadNextSection(out MultipartSection section, bool isStrict = true)
+    {
+        var offset = _offset;
+        var span = _span;
+        if (span.Length <= offset)
+        {
+            section = default;
+            return MultipartReadingStatus.End;
+        }
+        span = span.Slice(offset);
+#if DEBUG
+        var spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
+#endif
+        var boundary = _boundary;
+        var boundaryLength = boundary.Length;
+        var start = 0;
+        if (offset == 0)
+        {
+            Debug.Assert(boundaryLength > 2);
+            if (isStrict)
+            {
+                if (!span.StartsWith(boundary.Slice(2))) goto invalid;
+            }
+            else
+            {
+                start = span.IndexOf(boundary.Slice(2));//del \r\n
+                if (start < 0) goto invalid;
+            }
+
+            start += boundaryLength - 2;
+            span = span.Slice(start);
+            if (span.Length <= 2 || span[0] != CR || span[1] != LF) goto invalid;
+            start += 2;
+            span = span.Slice(2);
+#if DEBUG
+            spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
+#endif
+        }
+        var bodyEnd = span.IndexOf(boundary);
+        if (bodyEnd < 0) goto invalid;
+        var end = bodyEnd + boundaryLength + 2;
+        if (end > span.Length) goto invalid;
+#if DEBUG
+        spanUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, end));
+#endif
+        var first = span[end - 2];
+        var second = span[end - 1];
+        if (first != CR || second != LF)
+        {
+            if (first != Dash || second != Dash) goto invalid;
+            if (isStrict)
+            {
+                end += 2;
+                if (end != span.Length) goto invalid;
+                if (span[end - 2] != CR || span[end - 1] != LF) goto invalid;
+            }
+            else
+            {
+                end = span.Length;
+            }
+        }
+        span = span.Slice(0, bodyEnd);
+#if DEBUG
+        spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
+#endif
+        var index = span.IndexOf(CRLFCRLF);
+        if (index < 0)
+        {
+            section = default;
+            return MultipartReadingStatus.SectionSeparatorNotFound;
+        }
+        start += offset;
+        index += start;
+        section = new MultipartSection
+        {
+            Headers = new(start, index),
+            Body = new(index + 4, bodyEnd + start)
+        };
+#if DEBUG
+        var headersUtf8 = System.Text.Encoding.UTF8.GetString(_span[section.Headers]);
+        var bodyUtf8 = System.Text.Encoding.UTF8.GetString(_span[section.Body]);
+#endif
+        _offset = end + start;
+        return MultipartReadingStatus.Done;
+
+    invalid:
+        section = default;
+        _offset = _span.Length;
+        return MultipartReadingStatus.End;
+    }
+
     public bool TryReadNextSection(out MultipartSection section, bool isStrict = true)
     {
         var offset = _offset;
