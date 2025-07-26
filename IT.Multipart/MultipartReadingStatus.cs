@@ -6,5 +6,6 @@ public enum MultipartReadingStatus : sbyte
     HeaderNameNotFound = -10,
     SectionSeparatorNotFound = -1,
     Done = 0,
-    End = 1
+    End = 1,
+    HeaderNameNotSame = 10
 }

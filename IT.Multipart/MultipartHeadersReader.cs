@@ -83,6 +83,29 @@ public ref struct MultipartHeadersReader
         return MultipartReadingStatus.Done;
     }
 
+    public MultipartReadingStatus ReadNextHeaderValueByName(ReadOnlySpan<byte> name, out Range value)
+    {
+        var status = ReadNextHeader(out var header);
+        if (status != MultipartReadingStatus.Done)
+        {
+            value = default;
+            return status;
+        }
+        if (!_span[header.Name].SequenceEqual(name))
+        {
+            value = default;
+            return MultipartReadingStatus.HeaderNameNotSame;
+        }
+        value = header.Value;
+        return MultipartReadingStatus.Done;
+    }
+
+    public MultipartReadingStatus ReadNextContentDisposition(out Range value)
+        => ReadNextHeaderValueByName("Content-Disposition"u8, out value);
+
+    public MultipartReadingStatus ReadNextContentType(out Range value)
+        => ReadNextHeaderValueByName("Content-Type"u8, out value);
+
     public bool TryReadNextHeader(out MultipartHeader header)
     {
         var offset = _offset;
