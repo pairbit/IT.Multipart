@@ -27,6 +27,62 @@ public ref struct MultipartHeadersReader
         _offset = 0;
     }
 
+    public MultipartReadingStatus ReadNextHeader(out MultipartHeader header)
+    {
+        var offset = _offset;
+        var span = _span;
+        if (span.Length <= offset)
+        {
+            header = default;
+            return MultipartReadingStatus.End;
+        }
+        span = _span.Slice(offset);
+#if DEBUG
+        var spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
+#endif
+        var end = span.IndexOf(CRLF);
+        if (end < 0) end = span.Length;
+        else
+        {
+            span = span.Slice(0, end);
+#if DEBUG
+            spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
+#endif
+        }
+        var nameEnd = span.IndexOf(Sep);
+        if (nameEnd < 0)
+        {
+            header = default;
+            return MultipartReadingStatus.HeaderSeparatorNotFound;
+        }
+        if (nameEnd == 0)
+        {
+            header = default;
+            return MultipartReadingStatus.HeaderNameNotFound;
+        }
+        var valueStart = nameEnd + 1;
+        for (; valueStart < span.Length; valueStart++)
+        {
+            if (!IsWhiteSpace(span[valueStart])) break;
+        }
+        var valueEnd = end - 1;
+        for (; valueEnd >= valueStart; valueEnd--)
+        {
+            if (!IsWhiteSpace(span[valueEnd])) break;
+        }
+        header = new MultipartHeader
+        {
+            Name = new Range(offset, nameEnd + offset),
+            Value = new Range(valueStart + offset, valueEnd + offset + 1)
+        };
+#if DEBUG
+        var nameUtf8 = System.Text.Encoding.UTF8.GetString(_span[header.Name]);
+        var valueUtf8 = System.Text.Encoding.UTF8.GetString(_span[header.Value]);
+#endif
+        _offset = end + offset + 2;
+        return MultipartReadingStatus.Done;
+    }
+
     public bool TryReadNextHeader(out MultipartHeader header)
     {
         var offset = _offset;
