@@ -326,17 +326,18 @@ internal class MultipartReaderTest
         Assert.That(reader.TryReadNextSection(out _), Is.False);
     }
 
-    private static void ReadNextSectionInvalid(ReadOnlySpan<byte> span, MultipartReadingStatus invalidStatus)
+    private static void ReadNextSectionInvalid(ReadOnlySpan<byte> span, MultipartReadingStatus invalidStatus, bool isStrict = true)
     {
-        Assert.That((sbyte)invalidStatus, Is.LessThan(0));
+        var offset = (int)invalidStatus;
+        Assert.That(offset, Is.LessThan(0));
 
         var reader = new MultipartReader(Boundary, span);
-        Assert.That(reader.ReadNextSection(out var section), Is.EqualTo(invalidStatus));
+        Assert.That(reader.ReadNextSection(out var section, isStrict), Is.EqualTo(invalidStatus));
         Assert.That(section, Is.EqualTo(default(MultipartSection)));
 
-        Assert.That(reader.Offset, Is.EqualTo((int)invalidStatus));
+        Assert.That(reader.Offset, Is.EqualTo(offset));
 
-        Assert.That(reader.ReadNextSection(out section), Is.EqualTo(invalidStatus));
+        Assert.That(reader.ReadNextSection(out section, isStrict), Is.EqualTo(invalidStatus));
         Assert.That(section, Is.EqualTo(default(MultipartSection)));
     }
 }
