@@ -2,6 +2,8 @@
 
 public enum MultipartReadingStatus : sbyte
 {
+    HeaderFieldValueEndQuoteInvalid = -22,
+    HeaderFieldValueEndQuoteNotFound = -21,
     HeaderFieldNameNotFound = -20,
     HeaderNameNotFound = -11,
     HeaderSeparatorNotFound = -10,

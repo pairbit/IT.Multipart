@@ -75,7 +75,7 @@ public ref struct MultipartHeaderFieldsReader
     public MultipartReadingStatus ReadNextField(out MultipartHeaderField field)
         => ReadNextField(out field, TrimOptions.MinStart, TrimOptions.None);
 
-    public MultipartReadingStatus ReadNextField(out MultipartHeaderField field, 
+    public MultipartReadingStatus ReadNextField(out MultipartHeaderField field,
         TrimOptions trim, TrimOptions trimField)
     {
         if (!TryReadNextValue(out var value, trim))
@@ -128,7 +128,14 @@ public ref struct MultipartHeaderFieldsReader
             var valueEnd = span.Length;
             if (span[valueStart] == Quote)
             {
-                valueEnd = span[valueEnd - 1] == Quote ? valueEnd + nameStart - 1 : ReadNextQuote() - 1;
+                if (span[valueEnd - 1] == Quote)
+                {
+                    valueEnd = valueEnd + nameStart - 1;
+                }
+                else
+                {
+                    valueEnd = ReadNextQuote(trim) - 1;
+                }
                 valueStart++;
             }
             else
@@ -312,7 +319,7 @@ public ref struct MultipartHeaderFieldsReader
     }
     */
 
-    private int ReadNextQuote()
+    private int ReadNextQuote(TrimOptions trim)
     {
         var offset = _offset;
         var span = _span;
@@ -325,15 +332,25 @@ public ref struct MultipartHeaderFieldsReader
         if (sep < 0) throw QuoteNotFound();
         sep++;
         var end = sep;
-        for (; end < span.Length; end++)
+        if (end < span.Length)
         {
-            var token = span[end];
-            if (!IsWhiteSpace(token))
+            if (trim.HasEnd)
             {
-                if (token != Sep) throw QuoteInvalid();
-                end++;
-                break;
+                do
+                {
+                    var token = span[end];
+                    if (!trim.Contains(token))
+                    {
+                        if (token != Sep) throw QuoteInvalid();
+                        break;
+                    }
+                } while (++end < span.Length);
             }
+            else if (span[end] != Sep)
+            {
+                throw QuoteInvalid();
+            }
+            end++;
         }
         _offset = offset + end;
         return offset + sep;
