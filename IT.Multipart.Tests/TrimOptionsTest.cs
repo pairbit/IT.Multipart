@@ -8,14 +8,24 @@ internal class TrimOptionsTest
     [Test]
     public void Test()
     {
-        var ch = ' ';
-        var b = (byte)ch;
+        var max = TrimOptions.Max;
+        Assert.That(max.HasStart && max.HasEnd, Is.True);
+        Assert.That(max.Side, Is.EqualTo(TrimSide.StartEnd));
 
-        var opt = TrimOptions.Default;
         for (int i = 0; i <= 255; i++)
         {
             var by = (byte)i;
-            Assert.That(opt.Contains(by), Is.EqualTo(IsWhiteSpace(by)));
+            Assert.That(max.Contains(by), Is.EqualTo(IsWhiteSpace(by)));
+        }
+
+        var min = TrimOptions.Min;
+        Assert.That(min.HasStart && min.HasEnd, Is.True);
+        Assert.That(min.Side, Is.EqualTo(TrimSide.StartEnd));
+
+        for (int i = 0; i <= 255; i++)
+        {
+            var by = (byte)i;
+            Assert.That(min.Contains(by), Is.EqualTo(by == ' '));
         }
     }
 

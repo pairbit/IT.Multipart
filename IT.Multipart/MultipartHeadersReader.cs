@@ -27,7 +27,10 @@ public ref struct MultipartHeadersReader
         _offset = 0;
     }
 
-    public MultipartReadingStatus ReadNextHeader(out MultipartHeader header, bool trimValue = true)
+    public MultipartReadingStatus ReadNextHeader(out MultipartHeader header)
+        => ReadNextHeader(out header, TrimOptions.MinStart);
+
+    public MultipartReadingStatus ReadNextHeader(out MultipartHeader header, TrimOptions trimValue)
     {
         var offset = _offset;
         if (offset < 0)
@@ -68,19 +71,19 @@ public ref struct MultipartHeadersReader
             return MultipartReadingStatus.HeaderNameNotFound;
         }
         var valueStart = nameEnd + 1;
-        if (trimValue)
+        if (trimValue.HasStart)
         {
             for (; valueStart < span.Length; valueStart++)
             {
-                if (!IsWhiteSpace(span[valueStart])) break;
+                if (!trimValue.Contains(span[valueStart])) break;
             }
         }
         var valueEnd = end - 1;
-        if (trimValue)
+        if (trimValue.HasEnd)
         {
             for (; valueEnd >= valueStart; valueEnd--)
             {
-                if (!IsWhiteSpace(span[valueEnd])) break;
+                if (!trimValue.Contains(span[valueEnd])) break;
             }
         }
         header = new MultipartHeader
@@ -96,7 +99,10 @@ public ref struct MultipartHeadersReader
         return MultipartReadingStatus.Done;
     }
 
-    public MultipartReadingStatus ReadNextHeaderValueByName(ReadOnlySpan<byte> name, out Range value, bool trimValue = true)
+    public MultipartReadingStatus ReadNextHeaderValueByName(ReadOnlySpan<byte> name, out Range value)
+        => ReadNextHeaderValueByName(name, out value, TrimOptions.MinStart);
+
+    public MultipartReadingStatus ReadNextHeaderValueByName(ReadOnlySpan<byte> name, out Range value, TrimOptions trimValue)
     {
         var status = ReadNextHeader(out var header, trimValue);
         if (status != MultipartReadingStatus.Done)
@@ -113,10 +119,16 @@ public ref struct MultipartHeadersReader
         return MultipartReadingStatus.Done;
     }
 
-    public MultipartReadingStatus ReadNextContentDisposition(out Range value, bool trimValue = true)
+    public MultipartReadingStatus ReadNextContentDisposition(out Range value)
+        => ReadNextHeaderValueByName("Content-Disposition"u8, out value, TrimOptions.MinStart);
+
+    public MultipartReadingStatus ReadNextContentDisposition(out Range value, TrimOptions trimValue)
         => ReadNextHeaderValueByName("Content-Disposition"u8, out value, trimValue);
 
-    public MultipartReadingStatus ReadNextContentType(out Range value, bool trimValue = true)
+    public MultipartReadingStatus ReadNextContentType(out Range value)
+        => ReadNextHeaderValueByName("Content-Type"u8, out value, TrimOptions.MinStart);
+
+    public MultipartReadingStatus ReadNextContentType(out Range value, TrimOptions trimValue)
         => ReadNextHeaderValueByName("Content-Type"u8, out value, trimValue);
 
     public bool TryReadNextHeader(out MultipartHeader header)
@@ -180,17 +192,7 @@ public ref struct MultipartHeadersReader
         value = default;
         return false;
     }
-    /*
-    public MultipartReadingStatus ReadNextContentDisposition(out MultipartContentDisposition value)
-    {
-        if (!TryReadNextHeaderValueByName("Content-Disposition"u8, out var headerValue))
-        {
-            value = default;
-            return MultipartReadingStatus.NotFound;
-        }
-        return new MultipartContentDispositionReader(_span[headerValue]).Read(out value);
-    }
-    */
+
     public bool TryFindHeaderValueByName(ReadOnlySpan<byte> name, out Range value)
     {
         while (TryReadNextHeader(out var header))
