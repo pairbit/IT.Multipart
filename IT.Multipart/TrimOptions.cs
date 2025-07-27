@@ -71,9 +71,10 @@ public readonly struct TrimOptions
     internal void ClampStart(ReadOnlySpan<byte> span, ref int start)
     {
         Debug.Assert(start >= 0);
+        var map = _map;
         for (; start < span.Length; start++)
         {
-            if (!Contains(span[start])) break;
+            if (!map[span[start]]) break;
         }
     }
 
@@ -81,10 +82,10 @@ public readonly struct TrimOptions
     {
         Debug.Assert(start >= 0 && start <= span.Length);
         Debug.Assert(end >= 0 && end < span.Length);
-        
+        var map = _map;
         for (; end >= start; end--)
         {
-            if (!Contains(span[end])) break;
+            if (!map[span[end]]) break;
         }
     }
 
