@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace IT.Multipart;
 
@@ -69,6 +70,7 @@ public readonly struct TrimOptions
 
     internal void ClampStart(ReadOnlySpan<byte> span, ref int start)
     {
+        Debug.Assert(start >= 0);
         for (; start < span.Length; start++)
         {
             if (!Contains(span[start])) break;
@@ -77,6 +79,9 @@ public readonly struct TrimOptions
 
     internal void ClampEnd(ReadOnlySpan<byte> span, int start, ref int end)
     {
+        Debug.Assert(start >= 0 && start <= span.Length);
+        Debug.Assert(end >= 0 && end < span.Length);
+        
         for (; end >= start; end--)
         {
             if (!Contains(span[end])) break;
