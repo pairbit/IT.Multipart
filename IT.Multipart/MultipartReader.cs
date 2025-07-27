@@ -275,7 +275,7 @@ public ref struct MultipartReader
                 {
                     if (contentDisposition[type].SequenceEqual(contentDispositionType))
                     {
-                        if (headerFieldsReader.TryReadNextValueByName("name"u8, out var name))
+                        if (headerFieldsReader.ReadNextValueByName("name"u8, out var name) == MultipartReadingStatus.Done)
                         {
                             if (contentDisposition[name].SequenceEqual(contentDispositionName))
                                 return true;
@@ -314,7 +314,7 @@ public ref struct MultipartReader
                 {
                     if (contentDisposition[type].SequenceEqual(contentDispositionType))
                     {
-                        while (headerFieldsReader.TryFindValueByName("name"u8, out var name))
+                        while (headerFieldsReader.FindValueByName("name"u8, out var name) == MultipartReadingStatus.Done)
                         {
                             if (contentDisposition[name].SequenceEqual(contentDispositionName))
                                 return true;

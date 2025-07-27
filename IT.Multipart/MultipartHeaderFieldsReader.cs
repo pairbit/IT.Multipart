@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace IT.Multipart;
 
@@ -30,6 +31,9 @@ public ref struct MultipartHeaderFieldsReader
     }
 
     public bool TryReadNextValue(out Range value)
+        => TryReadNextValue(out value, TrimOptions.MinStart);
+
+    public bool TryReadNextValue(out Range value, TrimOptions trim)
     {
         var offset = _offset;
         var span = _span;
@@ -52,15 +56,14 @@ public ref struct MultipartHeaderFieldsReader
 #endif
         }
         var start = 0;
-        for (; start < span.Length; start++)
+        if (trim.HasStart)
         {
-            if (!IsWhiteSpace(span[start])) break;
+            Debug.Assert(start < span.Length);
+            trim.ClampStart(span, ref start);
         }
         var end = sep - 1;
-        for (; end >= start; end--)
-        {
-            if (!IsWhiteSpace(span[end])) break;
-        }
+        if (trim.HasEnd && end >= start)
+            trim.ClampEnd(span, start, ref end);
         value = new(start + offset, end + offset + 1);
 #if DEBUG
         spanUtf8 = System.Text.Encoding.UTF8.GetString(_span[value]);
@@ -70,8 +73,12 @@ public ref struct MultipartHeaderFieldsReader
     }
 
     public MultipartReadingStatus ReadNextField(out MultipartHeaderField field)
+        => ReadNextField(out field, TrimOptions.MinStart, TrimOptions.None);
+
+    public MultipartReadingStatus ReadNextField(out MultipartHeaderField field, 
+        TrimOptions trim, TrimOptions trimField)
     {
-        if (!TryReadNextValue(out var value))
+        if (!TryReadNextValue(out var value, trim))
         {
             field = default;
             return MultipartReadingStatus.End;
@@ -96,10 +103,9 @@ public ref struct MultipartHeaderFieldsReader
             var nameUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, nameSep));
 #endif
             var nameEnd = nameSep - 1;
-            for (; nameEnd >= 0; nameEnd--)
-            {
-                if (!IsWhiteSpace(span[nameEnd])) break;
-            }
+            if (trimField.HasEnd && nameEnd >= 0)
+                trimField.ClampEnd(span, 0, ref nameEnd);
+
             nameEnd++;
             if (nameEnd == 0)
             {
@@ -113,10 +119,8 @@ public ref struct MultipartHeaderFieldsReader
 #if DEBUG
             var valueUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(valueStart));
 #endif
-            for (; valueStart < span.Length; valueStart++)
-            {
-                if (!IsWhiteSpace(span[valueStart])) break;
-            }
+            if (trimField.HasStart && valueStart < span.Length)
+                trimField.ClampStart(span, ref valueStart);
 #if DEBUG
             valueUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(valueStart));
 #endif
@@ -145,8 +149,12 @@ public ref struct MultipartHeaderFieldsReader
     }
 
     public MultipartReadingStatus ReadNextValueByName(ReadOnlySpan<byte> name, out Range value)
+        => ReadNextValueByName(name, out value, TrimOptions.MinStart, TrimOptions.None);
+
+    public MultipartReadingStatus ReadNextValueByName(ReadOnlySpan<byte> name, out Range value,
+        TrimOptions trim, TrimOptions trimField)
     {
-        var status = ReadNextField(out var field);
+        var status = ReadNextField(out var field, trim, trimField);
         if (status != MultipartReadingStatus.Done)
         {
             value = default;
@@ -167,6 +175,38 @@ public ref struct MultipartHeaderFieldsReader
         return MultipartReadingStatus.Done;
     }
 
+    public MultipartReadingStatus FindValueByName(ReadOnlySpan<byte> name, out Range value)
+        => FindValueByName(name, out value, TrimOptions.MinStart, TrimOptions.None);
+
+    public MultipartReadingStatus FindValueByName(ReadOnlySpan<byte> name, out Range value,
+        TrimOptions trim, TrimOptions trimField)
+    {
+        var span = _span;
+        MultipartReadingStatus status;
+        do
+        {
+            status = ReadNextField(out var field, trim, trimField);
+            if (status != MultipartReadingStatus.Done)
+            {
+                value = default;
+                break;
+            }
+#if DEBUG
+            var nameUtf8 = System.Text.Encoding.UTF8.GetString(span[field.Name]);
+            var valueUtf8 = System.Text.Encoding.UTF8.GetString(span[field.Value]);
+#endif
+            if (span[field.Name].SequenceEqual(name))
+            {
+                value = field.Value;
+                status = MultipartReadingStatus.Done;
+                break;
+            }
+        } while (true);
+
+        return status;
+    }
+
+    /*
     public bool TryReadNextField(out MultipartHeaderField field)
     {
         if (!TryReadNextValue(out var value))
@@ -270,6 +310,7 @@ public ref struct MultipartHeaderFieldsReader
         value = default;
         return false;
     }
+    */
 
     private int ReadNextQuote()
     {
@@ -305,9 +346,6 @@ public ref struct MultipartHeaderFieldsReader
         (byte)'\t' or //horizontal tab
         (byte)'\v' or //vertical tab
         (byte)'\f'; //form feed
-
-    internal static InvalidOperationException NameNotFound()
-        => new("Invalid header field. Name not found");
 
     internal static InvalidOperationException QuoteNotFound()
         => new("Invalid header field. Quote not found");
