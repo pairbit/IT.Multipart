@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Text;
+﻿using System.Text;
 
 namespace IT.Multipart.Tests;
 
@@ -65,7 +64,7 @@ internal class TrimOptionsTest
                 sb.AppendLine(",");
         }
         sb.Append("]");
-        var str= sb.ToString();
+        var str = sb.ToString();
     }
 
     private static bool IsWhiteSpace(byte b) => b is
@@ -74,9 +73,8 @@ internal class TrimOptionsTest
         (byte)'\r' or //carriage return
         (byte)'\t' or //horizontal tab
         (byte)'\v' or //vertical tab
-        (byte)'\f' or
+        (byte)'\f' or //form feed
         (byte)'\u0085' or
-        (byte)' '
-        ; //form feed
+        (byte)' ';
 
 }
