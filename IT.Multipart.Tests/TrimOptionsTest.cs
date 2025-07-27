@@ -8,9 +8,14 @@ internal class TrimOptionsTest
     [Test]
     public void Test()
     {
+        Assert.That(TrimOptions.None.Side, Is.EqualTo(TrimSide.None));
+        Assert.That(!TrimOptions.None.HasStart && !TrimOptions.None.HasEnd, Is.True);
+
         var max = TrimOptions.Max;
         Assert.That(max.HasStart && max.HasEnd, Is.True);
         Assert.That(max.Side, Is.EqualTo(TrimSide.StartEnd));
+        Assert.That(TrimOptions.MaxStart.HasStart && !TrimOptions.MaxStart.HasEnd, Is.True);
+        Assert.That(!TrimOptions.MaxEnd.HasStart && TrimOptions.MaxEnd.HasEnd, Is.True);
 
         for (int i = 0; i <= 255; i++)
         {
@@ -21,6 +26,8 @@ internal class TrimOptionsTest
         var min = TrimOptions.Min;
         Assert.That(min.HasStart && min.HasEnd, Is.True);
         Assert.That(min.Side, Is.EqualTo(TrimSide.StartEnd));
+        Assert.That(TrimOptions.MinStart.HasStart && !TrimOptions.MinStart.HasEnd, Is.True);
+        Assert.That(!TrimOptions.MinEnd.HasStart && TrimOptions.MinEnd.HasEnd, Is.True);
 
         for (int i = 0; i <= 255; i++)
         {

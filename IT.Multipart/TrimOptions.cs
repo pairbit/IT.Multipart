@@ -4,6 +4,8 @@ namespace IT.Multipart;
 
 public readonly struct TrimOptions
 {
+    public static readonly TrimOptions None;
+
     public static readonly TrimOptions Min;
     public static readonly TrimOptions MinStart;
     public static readonly TrimOptions MinEnd;
