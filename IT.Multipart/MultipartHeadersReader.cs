@@ -71,21 +71,9 @@ public ref struct MultipartHeadersReader
             return MultipartReadingStatus.HeaderNameNotFound;
         }
         var valueStart = nameEnd + 1;
-        if (trimValue.HasStart)
-        {
-            for (; valueStart < span.Length; valueStart++)
-            {
-                if (!trimValue.Contains(span[valueStart])) break;
-            }
-        }
+        if (trimValue.HasStart) trimValue.ClampStart(span, ref valueStart);
         var valueEnd = end - 1;
-        if (trimValue.HasEnd)
-        {
-            for (; valueEnd >= valueStart; valueEnd--)
-            {
-                if (!trimValue.Contains(span[valueEnd])) break;
-            }
-        }
+        if (trimValue.HasEnd) trimValue.ClampEnd(span, valueStart, ref valueEnd);
         header = new MultipartHeader
         {
             Name = new Range(offset, nameEnd + offset),

@@ -30,11 +30,11 @@ public readonly struct TrimOptions
 
     public TrimSide Side => _side;
 
+    public ReadOnlySpan<bool> Map => _map;
+
     public bool HasStart => (_side & TrimSide.Start) == TrimSide.Start;
 
     public bool HasEnd => (_side & TrimSide.End) == TrimSide.End;
-
-    public bool Contains(byte by) => _map[by];
 
     private TrimOptions(TrimOptions options, TrimSide side)
     {
@@ -53,6 +53,8 @@ public readonly struct TrimOptions
         _map = map;
     }
 
+    public bool Contains(byte by) => _map[by];
+
     public TrimOptions WithStart() => new(this, TrimSide.Start);
 
     public TrimOptions WithEnd() => new(this, TrimSide.End);
@@ -63,6 +65,22 @@ public readonly struct TrimOptions
             throw new ArgumentOutOfRangeException(nameof(side));
 
         return new(this, side);
+    }
+
+    internal void ClampStart(ReadOnlySpan<byte> span, ref int start)
+    {
+        for (; start < span.Length; start++)
+        {
+            if (!Contains(span[start])) break;
+        }
+    }
+
+    internal void ClampEnd(ReadOnlySpan<byte> span, int start, ref int end)
+    {
+        for (; end >= start; end--)
+        {
+            if (!Contains(span[end])) break;
+        }
     }
 
     private static readonly bool[] WhiteSpace = [
