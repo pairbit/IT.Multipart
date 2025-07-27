@@ -20,7 +20,14 @@ internal class TrimOptionsTest
         for (int i = 0; i <= 255; i++)
         {
             var by = (byte)i;
-            Assert.That(max.Contains(by), Is.EqualTo(IsWhiteSpace(by)));
+            var isWhiteSpace = IsWhiteSpace(by);
+            Assert.That(max.Contains(by), Is.EqualTo(isWhiteSpace));
+
+            var ch = (char)by;
+            if (char.IsWhiteSpace(ch) != isWhiteSpace)
+            {
+                Assert.Fail($"Is not WhiteSpace '{by}'");
+            }
         }
 
         var min = TrimOptions.Min;
@@ -67,6 +74,9 @@ internal class TrimOptionsTest
         (byte)'\r' or //carriage return
         (byte)'\t' or //horizontal tab
         (byte)'\v' or //vertical tab
-        (byte)'\f'; //form feed
+        (byte)'\f' or
+        (byte)'\u0085' or
+        (byte)' '
+        ; //form feed
 
 }
