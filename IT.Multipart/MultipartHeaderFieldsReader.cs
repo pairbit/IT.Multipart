@@ -375,18 +375,4 @@ public ref struct MultipartHeaderFieldsReader
         index = offset + sep;
         return MultipartReadingStatus.Done;
     }
-
-    private static bool IsWhiteSpace(byte b) => b is
-        (byte)' ' or //space
-        (byte)'\n' or //newline
-        (byte)'\r' or //carriage return
-        (byte)'\t' or //horizontal tab
-        (byte)'\v' or //vertical tab
-        (byte)'\f'; //form feed
-
-    internal static InvalidOperationException QuoteNotFound()
-        => new("Invalid header field. Quote not found");
-
-    internal static InvalidOperationException QuoteInvalid()
-        => new("Invalid header field. Quote is invalid");
 }
