@@ -118,14 +118,11 @@ internal class MultipartHeaderFieldsReaderTest
         Assert.That(span[field.Name].SequenceEqual("ab"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("\"a\",\"b\""u8), Is.True);
 
-        Assert.That(Assert.Throws<InvalidOperationException>(() => new MultipartHeaderFieldsReader("filename=\"a"u8).ReadNextField(out _))
-            .Message, Is.EqualTo(MultipartHeaderFieldsReader.QuoteNotFound().Message));
+        Assert.That(new MultipartHeaderFieldsReader("filename=\"a"u8).ReadNextField(out _), Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound));
 
-        Assert.That(Assert.Throws<InvalidOperationException>(() => new MultipartHeaderFieldsReader("filename=\"a;a=b"u8).ReadNextField(out _))
-            .Message, Is.EqualTo(MultipartHeaderFieldsReader.QuoteNotFound().Message));
+        Assert.That(new MultipartHeaderFieldsReader("filename=\"a;a=b"u8).ReadNextField(out _), Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound));
 
-        Assert.That(Assert.Throws<InvalidOperationException>(() => new MultipartHeaderFieldsReader("filename=\"a;\"a=b"u8).ReadNextField(out _))
-            .Message, Is.EqualTo(MultipartHeaderFieldsReader.QuoteInvalid().Message));
+        Assert.That(new MultipartHeaderFieldsReader("filename=\"a;\"a=b"u8).ReadNextField(out _), Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid));
     }
 
     [Test]

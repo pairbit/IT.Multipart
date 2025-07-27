@@ -134,7 +134,13 @@ public ref struct MultipartHeaderFieldsReader
                 }
                 else
                 {
-                    valueEnd = ReadNextQuote(trim) - 1;
+                    var status = ReadNextQuote(trim, out valueEnd);
+                    if (status != MultipartReadingStatus.Done)
+                    {
+                        field = default;
+                        return status;
+                    }
+                    valueEnd--;
                 }
                 valueStart++;
             }
@@ -319,17 +325,25 @@ public ref struct MultipartHeaderFieldsReader
     }
     */
 
-    private int ReadNextQuote(TrimOptions trim)
+    private MultipartReadingStatus ReadNextQuote(TrimOptions trim, out int index)
     {
         var offset = _offset;
         var span = _span;
-        if (span.Length <= offset) throw QuoteNotFound();
+        if (span.Length <= offset)
+        {
+            index = 0;
+            return MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound;
+        }
         span = span.Slice(offset);
 #if DEBUG
         var spanUtf8 = System.Text.Encoding.UTF8.GetString(span);
 #endif
         var sep = span.IndexOf(Quote);
-        if (sep < 0) throw QuoteNotFound();
+        if (sep < 0)
+        {
+            index = 0;
+            return MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound;
+        }
         sep++;
         var end = sep;
         if (end < span.Length)
@@ -341,19 +355,25 @@ public ref struct MultipartHeaderFieldsReader
                     var token = span[end];
                     if (!trim.Contains(token))
                     {
-                        if (token != Sep) throw QuoteInvalid();
+                        if (token != Sep)
+                        {
+                            index = 0;
+                            return MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid;
+                        }
                         break;
                     }
                 } while (++end < span.Length);
             }
             else if (span[end] != Sep)
             {
-                throw QuoteInvalid();
+                index = 0;
+                return MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid;
             }
             end++;
         }
         _offset = offset + end;
-        return offset + sep;
+        index = offset + sep;
+        return MultipartReadingStatus.Done;
     }
 
     private static bool IsWhiteSpace(byte b) => b is
