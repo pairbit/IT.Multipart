@@ -71,10 +71,11 @@ public ref struct MultipartHeadersReader
             return MultipartReadingStatus.HeaderNameNotFound;
         }
         var valueStart = nameEnd + 1;
-        if (trimValue.HasStart && valueStart < span.Length) 
+        if (valueStart < span.Length && trimValue.HasStart)
             trimValue.ClampStart(span, ref valueStart);
         var valueEnd = end - 1;
-        if (trimValue.HasEnd) trimValue.ClampEnd(span, valueStart, ref valueEnd);
+        if (valueEnd >= valueStart && trimValue.HasEnd)
+            trimValue.ClampEnd(span, valueStart, ref valueEnd);
         header = new MultipartHeader
         {
             Name = new Range(offset, nameEnd + offset),

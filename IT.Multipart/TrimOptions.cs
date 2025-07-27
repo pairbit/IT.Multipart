@@ -81,13 +81,14 @@ public readonly struct TrimOptions
 
     internal void ClampEnd(ReadOnlySpan<byte> span, int start, ref int end)
     {
-        Debug.Assert(start >= 0 && start <= span.Length);
+        Debug.Assert(end >= start);
+        Debug.Assert(start >= 0 && start < span.Length);
         Debug.Assert(end >= 0 && end < span.Length);
         var map = _map;
-        for (; end >= start; end--)
+        do
         {
             if (!map[span[end]]) break;
-        }
+        } while (--end >= start);
     }
 
     private static readonly bool[] WhiteSpace = [
