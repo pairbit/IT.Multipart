@@ -74,6 +74,9 @@ internal class MultipartReaderTest
         Assert.That(span[section.Body].IsEmpty, Is.True);
 
         Assert.That(reader.ReadNextSection(out _), Is.EqualTo(MultipartReadingStatus.End));
+        
+        reader = new MultipartReader();
+        Assert.That(reader.ReadNextSection(out _), Is.EqualTo(MultipartReadingStatus.SectionsNotFound));
     }
 
     [Test]

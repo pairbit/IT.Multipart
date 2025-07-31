@@ -81,6 +81,10 @@ internal class MultipartHeadersReaderTest
         Assert.That(reader.ReadNextHeader(out header, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[header.Name].SequenceEqual("empty2"u8), Is.True);
         Assert.That(span[header.Value].IsEmpty, Is.True);
+
+        reader = new MultipartHeadersReader();
+        Assert.That(reader.ReadNextHeader(out header), Is.EqualTo(MultipartReadingStatus.HeadersNotFound));
+        Assert.That(header, Is.EqualTo(default(MultipartHeader)));
     }
 
     [Test]

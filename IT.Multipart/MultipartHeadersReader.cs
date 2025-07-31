@@ -42,7 +42,7 @@ public ref struct MultipartHeadersReader
         if (span.Length <= offset)
         {
             header = default;
-            return MultipartReadingStatus.End;
+            return offset == 0 ? MultipartReadingStatus.HeadersNotFound : MultipartReadingStatus.End;
         }
         span = _span.Slice(offset);
 #if DEBUG

@@ -51,7 +51,7 @@ public ref struct MultipartReader
         if (span.Length <= offset)
         {
             section = default;
-            return MultipartReadingStatus.End;
+            return offset == 0 ? MultipartReadingStatus.SectionsNotFound : MultipartReadingStatus.End;
         }
         span = span.Slice(offset);
 #if DEBUG
@@ -166,34 +166,39 @@ public ref struct MultipartReader
     }
 
     public MultipartReadingStatus ReadNextSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
-        ReadOnlySpan<byte> contentDispositionName, out MultipartSection section)
+        ReadOnlySpan<byte> contentDispositionName, out MultipartSection section, bool isStrict = true)
     {
-        var span = _span;
-        if (ReadNextSection(out section) == MultipartReadingStatus.Done)
+        var status = ReadNextSection(out section, isStrict);
+        if (status != MultipartReadingStatus.Done)
         {
-            var headers = span[section.Headers];
+            section = default;
+            return status;
+        }
+        var headers = _span[section.Headers];
 #if DEBUG
-            var headersUtf8 = System.Text.Encoding.UTF8.GetString(headers);
-            var bodyUtf8 = System.Text.Encoding.UTF8.GetString(span[section.Body]);
+        var headersUtf8 = System.Text.Encoding.UTF8.GetString(headers);
+        var bodyUtf8 = System.Text.Encoding.UTF8.GetString(_span[section.Body]);
 #endif
-            var headersReader = new MultipartHeadersReader(headers);
-            if (headersReader.ReadNextContentDisposition(out var value) == MultipartReadingStatus.Done)
+        var headersReader = new MultipartHeadersReader(headers);
+        status = headersReader.ReadNextContentDisposition(out var value);
+        if (status != MultipartReadingStatus.Done)
+        {
+            section = default;
+            return status;
+        }
+        var contentDisposition = headers[value];
+#if DEBUG
+        var contentDispositionUtf8 = System.Text.Encoding.UTF8.GetString(contentDisposition);
+#endif
+        var headerFieldsReader = new MultipartHeaderFieldsReader(contentDisposition);
+        if (headerFieldsReader.TryReadNextValue(out var type))
+        {
+            if (contentDisposition[type].SequenceEqual(contentDispositionType))
             {
-                var contentDisposition = headers[value];
-#if DEBUG
-                var contentDispositionUtf8 = System.Text.Encoding.UTF8.GetString(contentDisposition);
-#endif
-                var headerFieldsReader = new MultipartHeaderFieldsReader(contentDisposition);
-                if (headerFieldsReader.TryReadNextValue(out var type))
+                if (headerFieldsReader.ReadNextValueByName("name"u8, out var name) == MultipartReadingStatus.Done)
                 {
-                    if (contentDisposition[type].SequenceEqual(contentDispositionType))
-                    {
-                        if (headerFieldsReader.ReadNextValueByName("name"u8, out var name) == MultipartReadingStatus.Done)
-                        {
-                            if (contentDisposition[name].SequenceEqual(contentDispositionName))
-                                return MultipartReadingStatus.Done;
-                        }
-                    }
+                    if (contentDisposition[name].SequenceEqual(contentDispositionName))
+                        return MultipartReadingStatus.Done;
                 }
             }
         }
