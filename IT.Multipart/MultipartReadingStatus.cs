@@ -5,6 +5,8 @@ public enum MultipartReadingStatus : sbyte
     HeaderFieldValueEndQuoteInvalid = -22,
     HeaderFieldValueEndQuoteNotFound = -21,
     HeaderFieldNameNotFound = -20,
+    HeaderContentTypeNotFound = -14,
+    HeaderContentDispositionNotFound = -13,
     HeaderNameNotFound = -12,
     HeaderSeparatorNotFound = -11,
     HeadersNotFound = -10,
