@@ -148,7 +148,7 @@ public struct MultipartSequenceReader
         System.Text.Encoding.UTF8.TryGetString(sequence, out utf8);
 #endif
         var separator = sequence.PositionOf(MultipartReader.CRLFCRLF);
-        if (separator.IsNegative()) throw MultipartReader.SeparatorNotFound();
+        if (separator.IsNegative()) throw SeparatorNotFound();
         section = new MultipartSequenceSection(sequence, separator);
 #if DEBUG
         System.Text.Encoding.UTF8.TryGetString(section.Headers, out var headersUtf8);
@@ -162,4 +162,7 @@ public struct MultipartSequenceReader
         _position = _sequence.End;
         return false;
     }
+
+    private static InvalidOperationException SeparatorNotFound()
+        => new("Invalid multipart section. Separator '\\r\\n\\r\\n' not found");
 }

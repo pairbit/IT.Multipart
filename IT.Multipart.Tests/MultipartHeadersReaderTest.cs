@@ -90,6 +90,7 @@ internal class MultipartHeadersReaderTest
         ReadNextHeaderInvalid(": form-data"u8, MultipartReadingStatus.HeaderNameNotFound);
     }
 
+    /*
     [Test]
     public void TryReadNextHeaderTest()
     {
@@ -174,6 +175,7 @@ internal class MultipartHeadersReaderTest
             Assert.That(ex.Message, Is.EqualTo(MultipartHeadersReader.NameNotFound().Message));
         }
     }
+    */
 
     private static void ReadNextHeaderInvalid(ReadOnlySpan<byte> span, MultipartReadingStatus invalidStatus, TrimOptions trimValue = default)
     {

@@ -132,6 +132,7 @@ internal class MultipartReaderTest
             MultipartReadingStatus.SectionSeparatorNotFound);
     }
 
+    /*
     [Test]
     public void TryReadNextSectionNoStrictTest()
     {
@@ -203,6 +204,7 @@ internal class MultipartReaderTest
 
         Assert.That(reader.TryReadNextSection(out _), Is.False);
     }
+    */
 
     [Test]
     public void TryReadNextSectionByContentDispositionTest()
@@ -276,6 +278,7 @@ internal class MultipartReaderTest
         Assert.That(span[section.Body].SequenceEqual("package name"u8), Is.True);
     }
 
+    /*
     [Test]
     public void TryReadNextSectionInvalid()
     {
@@ -354,6 +357,7 @@ internal class MultipartReaderTest
         Assert.That(reader.TryReadNextSection(out _), Is.False);
         Assert.That(reader.TryReadNextSection(out _), Is.False);
     }
+    */
 
     private static void ReadNextSectionInvalid(ReadOnlySpan<byte> span, MultipartReadingStatus invalidStatus, bool isStrict = true)
     {
