@@ -25,9 +25,11 @@ public ref struct MultipartContentDispositionReader
 
     public bool TryReadType(out Range value) => _reader.TryReadNextValue(out value);
 
-    public bool IsFormData() => _reader.TryReadNextValue(out var type) && _reader.Span[type].SequenceEqual("form-data"u8);
+    public bool IsType(ReadOnlySpan<byte> value) => _reader.TryReadNextValue(out var type) && _reader.Span[type].SequenceEqual(value);
 
-    public bool IsAttachment() => _reader.TryReadNextValue(out var type) && _reader.Span[type].SequenceEqual("attachment"u8);
+    public bool IsFormData() => IsType("form-data"u8);
+
+    public bool IsAttachment() => IsType("attachment"u8);
 
     public MultipartReadingStatus ReadName(out Range value) => _reader.ReadNextValueByName("name"u8, out value);
 

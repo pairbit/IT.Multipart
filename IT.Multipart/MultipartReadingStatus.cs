@@ -2,6 +2,8 @@
 
 public enum MultipartReadingStatus : sbyte
 {
+    HeaderFieldContentDispositionNameNotFound = -24,
+    HeaderFieldContentDispositionTypeNotFound = -23,
     HeaderFieldValueEndQuoteInvalid = -22,
     HeaderFieldValueEndQuoteNotFound = -21,
     HeaderFieldNameNotFound = -20,
@@ -19,5 +21,7 @@ public enum MultipartReadingStatus : sbyte
     Done = 0,
     End = 1,
     HeaderNameNotSame = 10,
-    HeaderFieldNameNotSame = 20
+    HeaderFieldNameNotSame = 20,
+    HeaderFieldContentDispositionTypeNotSame = 23,
+    HeaderFieldContentDispositionNameNotSame = 24,
 }

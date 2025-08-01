@@ -190,20 +190,30 @@ public ref struct MultipartReader
 #if DEBUG
         var contentDispositionUtf8 = System.Text.Encoding.UTF8.GetString(contentDisposition);
 #endif
-        var headerFieldsReader = new MultipartHeaderFieldsReader(contentDisposition);
-        if (headerFieldsReader.TryReadNextValue(out var type))
+        var contentDispositionReader = new MultipartContentDispositionReader(contentDisposition);
+        if (!contentDispositionReader.TryReadType(out var type))
         {
-            if (contentDisposition[type].SequenceEqual(contentDispositionType))
-            {
-                if (headerFieldsReader.ReadNextValueByName("name"u8, out var name) == MultipartReadingStatus.Done)
-                {
-                    if (contentDisposition[name].SequenceEqual(contentDispositionName))
-                        return MultipartReadingStatus.Done;
-                }
-            }
+            section = default;
+            return MultipartReadingStatus.HeaderFieldContentDispositionTypeNotFound;
         }
-        section = default;
-        return MultipartReadingStatus.HeaderNameNotSame;
+        if (!contentDisposition[type].SequenceEqual(contentDispositionType))
+        {
+            section = default;
+            return MultipartReadingStatus.HeaderFieldContentDispositionTypeNotSame;
+        }
+        status = contentDispositionReader.ReadName(out var name);
+        if (status != MultipartReadingStatus.Done)
+        {
+            //TODO: status может быть равен End
+            section = default;
+            return status;
+        }
+        if (!contentDisposition[name].SequenceEqual(contentDispositionName))
+        {
+            section = default;
+            return MultipartReadingStatus.HeaderFieldContentDispositionNameNotSame;
+        }
+        return MultipartReadingStatus.Done;
     }
 
     public MultipartReadingStatus ReadNextSectionByContentDispositionFormData(ReadOnlySpan<byte> name, out MultipartSection section)
@@ -227,16 +237,13 @@ public ref struct MultipartReader
 #if DEBUG
                 var contentDispositionUtf8 = System.Text.Encoding.UTF8.GetString(contentDisposition);
 #endif
-                var headerFieldsReader = new MultipartHeaderFieldsReader(contentDisposition);
-                if (headerFieldsReader.TryReadNextValue(out var type))
+                var contentDispositionReader = new MultipartContentDispositionReader(contentDisposition);
+                if (contentDispositionReader.IsType(contentDispositionType))
                 {
-                    if (contentDisposition[type].SequenceEqual(contentDispositionType))
+                    while (contentDispositionReader.FindName(out var name) == MultipartReadingStatus.Done)
                     {
-                        while (headerFieldsReader.FindValueByName("name"u8, out var name) == MultipartReadingStatus.Done)
-                        {
-                            if (contentDisposition[name].SequenceEqual(contentDispositionName))
-                                return MultipartReadingStatus.Done;
-                        }
+                        if (contentDisposition[name].SequenceEqual(contentDispositionName))
+                            return MultipartReadingStatus.Done;
                     }
                 }
             }
