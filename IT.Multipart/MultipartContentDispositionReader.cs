@@ -13,6 +13,8 @@ public ref struct MultipartContentDispositionReader
 
     public readonly int Offset => _reader.Offset;
 
+    public readonly MultipartReadingStatus Status => _reader.Status;
+
     public MultipartContentDispositionReader(ReadOnlySpan<byte> span)
     {
         _reader = new MultipartHeaderFieldsReader(span);
@@ -31,11 +33,11 @@ public ref struct MultipartContentDispositionReader
 
     public bool IsAttachment() => IsType("attachment"u8);
 
-    public MultipartReadingStatus ReadName(out Range value) => _reader.ReadNextValueByName("name"u8, out value);
+    public bool ReadName(out Range value) => _reader.ReadNextValueByName("name"u8, out value);
 
-    public MultipartReadingStatus ReadFileName(out Range value) => _reader.ReadNextValueByName("filename"u8, out value);
+    public bool ReadFileName(out Range value) => _reader.ReadNextValueByName("filename"u8, out value);
 
-    public MultipartReadingStatus ReadFileNameStar(out Range value) => _reader.ReadNextValueByName("filename*"u8, out value);
+    public bool ReadFileNameStar(out Range value) => _reader.ReadNextValueByName("filename*"u8, out value);
 
     public bool TryRead(out MultipartContentDisposition value)
     {
@@ -45,7 +47,7 @@ public ref struct MultipartContentDispositionReader
             return false;
         }
 
-        if (_reader.ReadNextField(out var field) != MultipartReadingStatus.Done)
+        if (!_reader.ReadNextField(out var field))
         {
             value = new() { Type = type };
             return true;
@@ -57,7 +59,7 @@ public ref struct MultipartContentDispositionReader
         if (fieldName.SequenceEqual("name"u8))
         {
             name = field.Value;
-            if (_reader.ReadNextField(out field) != MultipartReadingStatus.Done)
+            if (!_reader.ReadNextField(out field))
             {
                 value = new() { Type = type, Name = name };
                 return true;
@@ -69,7 +71,7 @@ public ref struct MultipartContentDispositionReader
         if (fieldName.SequenceEqual("filename"u8))
         {
             fileName = field.Value;
-            if (_reader.ReadNextField(out field) != MultipartReadingStatus.Done)
+            if (!_reader.ReadNextField(out field))
             {
                 value = new() { Type = type, Name = name, FileName = fileName };
                 return true;
@@ -87,9 +89,9 @@ public ref struct MultipartContentDispositionReader
         return false;
     }
 
-    public MultipartReadingStatus FindName(out Range value) => _reader.FindValueByName("name"u8, out value);
+    public bool FindName(out Range value) => _reader.FindValueByName("name"u8, out value);
 
-    public MultipartReadingStatus FindFileName(out Range value) => _reader.FindValueByName("filename"u8, out value);
+    public bool FindFileName(out Range value) => _reader.FindValueByName("filename"u8, out value);
 
-    public MultipartReadingStatus FindFileNameStar(out Range value) => _reader.FindValueByName("filename*"u8, out value);
+    public bool FindFileNameStar(out Range value) => _reader.FindValueByName("filename*"u8, out value);
 }

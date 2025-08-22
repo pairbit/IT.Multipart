@@ -20,24 +20,29 @@ internal class MultipartReaderTest
         var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
 
-        Assert.That(reader.ReadNextSection(out var section, isStrict: false), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSection(out var section, isStrict: false), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=transform; filename=\"Transform;utf8.xsl\"\r\nContent-Type: text/xml"u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("<data>mydata</data>"u8), Is.True);
 
-        Assert.That(reader.ReadNextSection(out section, isStrict: false), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSection(out section, isStrict: false), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=\"name\""u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("package name"u8), Is.True);
 
-        Assert.That(reader.ReadNextSection(out section, isStrict: false), Is.EqualTo(MultipartReadingStatus.End));
+        Assert.That(reader.ReadNextSection(out section, isStrict: false), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.End));
         Assert.That(section, Is.EqualTo(default(MultipartSection)));
 
         span = "[[[------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--]]]"u8;
         reader = new MultipartReader(boundary, span);
-        Assert.That(reader.ReadNextSection(out section, isStrict: false), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSection(out section, isStrict: false), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].IsEmpty, Is.True);
         Assert.That(span[section.Body].IsEmpty, Is.True);
 
-        Assert.That(reader.ReadNextSection(out _), Is.EqualTo(MultipartReadingStatus.End));
+        Assert.That(reader.ReadNextSection(out _), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.End));
     }
 
     [Test]
@@ -56,27 +61,34 @@ internal class MultipartReaderTest
         var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
 
-        Assert.That(reader.ReadNextSection(out var section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSection(out var section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=transform; filename=\"Transform;utf8.xsl\"\r\nContent-Type: text/xml"u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("<data>mydata</data>"u8), Is.True);
 
-        Assert.That(reader.ReadNextSection(out section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSection(out section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=\"name\""u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("package name"u8), Is.True);
 
-        Assert.That(reader.ReadNextSection(out section), Is.EqualTo(MultipartReadingStatus.End));
+        Assert.That(reader.ReadNextSection(out section), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.End));
         Assert.That(section, Is.EqualTo(default(MultipartSection)));
 
         span = "------WebKitFormBoundarylng3rD4syfIK3fT9\r\n\r\n\r\n\r\n------WebKitFormBoundarylng3rD4syfIK3fT9--\r\n"u8;
         reader = new MultipartReader(boundary, span);
-        Assert.That(reader.ReadNextSection(out section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSection(out section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].IsEmpty, Is.True);
         Assert.That(span[section.Body].IsEmpty, Is.True);
 
-        Assert.That(reader.ReadNextSection(out _), Is.EqualTo(MultipartReadingStatus.End));
-        
+        Assert.That(reader.ReadNextSection(out _), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.End));
+
         reader = new MultipartReader();
-        Assert.That(reader.ReadNextSection(out _), Is.EqualTo(MultipartReadingStatus.SectionsNotFound));
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSection(out _), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.SectionsNotFound));
     }
 
     [Test]
@@ -231,15 +243,18 @@ internal class MultipartReaderTest
         var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
 
-        Assert.That(reader.ReadNextSectionByContentDisposition("attachment"u8, "data"u8, out var section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSectionByContentDisposition("attachment"u8, "data"u8, out var section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: attachment; name=data; filename=\"Transform;utf8.xsl\"\r\nContent-Type: text/xml"u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("<data>data attachment</data>"u8), Is.True);
 
-        Assert.That(reader.ReadNextSectionByContentDispositionFormData("data"u8, out section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSectionByContentDispositionFormData("data"u8, out section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=\"data\"; filename=\"Transform;utf8.xsl\"\r\nContent-Type: text/xml"u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("<data>data form-data</data>"u8), Is.True);
 
-        Assert.That(reader.ReadNextSectionByContentDispositionFormData("name"u8, out section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextSectionByContentDispositionFormData("name"u8, out section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=\"name\""u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("package name"u8), Is.True);
     }
@@ -266,17 +281,20 @@ internal class MultipartReaderTest
         var boundary = "\r\n------WebKitFormBoundarylng3rD4syfIK3fT9"u8;
         var reader = new MultipartReader(boundary, span);
 
-        Assert.That(reader.FindSectionByContentDispositionFormData("data"u8, out var section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindSectionByContentDispositionFormData("data"u8, out var section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Type: text/xml\r\nContent-Disposition: form-data; filename=\"Transform;utf8.xsl\"; name=\"data\""u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("<data>data form-data</data>"u8), Is.True);
 
         reader.Reset();
 
-        Assert.That(reader.FindSectionByContentDisposition("attachment"u8, "data"u8, out section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindSectionByContentDisposition("attachment"u8, "data"u8, out section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Type: text/xml\r\nContent-Disposition: attachment; filename=\"Transform;utf8.xsl\"; name=data"u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("<data>data attachment</data>"u8), Is.True);
 
-        Assert.That(reader.FindSectionByContentDispositionFormData("name"u8, out section), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindSectionByContentDispositionFormData("name"u8, out section), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[section.Headers].SequenceEqual("Content-Disposition: form-data; name=\"name\""u8), Is.True);
         Assert.That(span[section.Body].SequenceEqual("package name"u8), Is.True);
     }
@@ -362,18 +380,15 @@ internal class MultipartReaderTest
     }
     */
 
-    private static void ReadNextSectionInvalid(ReadOnlySpan<byte> span, MultipartReadingStatus invalidStatus, bool isStrict = true)
+    private static void ReadNextSectionInvalid(ReadOnlySpan<byte> span, MultipartReadingStatus status, bool isStrict = true)
     {
-        var offset = (int)invalidStatus;
-        Assert.That(offset, Is.LessThan(0));
-
         var reader = new MultipartReader(Boundary, span);
-        Assert.That(reader.ReadNextSection(out var section, isStrict), Is.EqualTo(invalidStatus));
+        Assert.That(reader.ReadNextSection(out var section, isStrict), Is.EqualTo(status == MultipartReadingStatus.Done));
         Assert.That(section, Is.EqualTo(default(MultipartSection)));
+        Assert.That(reader.Status, Is.EqualTo(status));
 
-        Assert.That(reader.Offset, Is.EqualTo(offset));
-
-        Assert.That(reader.ReadNextSection(out section, isStrict), Is.EqualTo(invalidStatus));
+        Assert.That(reader.ReadNextSection(out section, isStrict), Is.EqualTo(status == MultipartReadingStatus.Done));
         Assert.That(section, Is.EqualTo(default(MultipartSection)));
+        Assert.That(reader.Status, Is.EqualTo(status));
     }
 }

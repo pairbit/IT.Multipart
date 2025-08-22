@@ -13,12 +13,15 @@ public ref struct MultipartReader
     private readonly ReadOnlySpan<byte> _span;
     private readonly ReadOnlySpan<byte> _boundary;
     private int _offset;
+    private MultipartReadingStatus _status;
 
     public readonly ReadOnlySpan<byte> Span => _span;
 
     public readonly ReadOnlySpan<byte> Boundary => _boundary;
 
     public readonly int Offset => _offset;
+
+    public readonly MultipartReadingStatus Status => _status;
 
     public MultipartReader(MultipartBoundary boundary, ReadOnlySpan<byte> span)
     {
@@ -37,21 +40,18 @@ public ref struct MultipartReader
     public void Reset()
     {
         _offset = 0;
+        _status = MultipartReadingStatus.Done;
     }
 
-    public MultipartReadingStatus ReadNextSection(out MultipartSection section, bool isStrict = true)
+    public bool ReadNextSection(out MultipartSection section, bool isStrict = true)
     {
         var offset = _offset;
-        if (offset < 0)
-        {
-            section = default;
-            return (MultipartReadingStatus)checked((sbyte)offset);
-        }
         var span = _span;
         if (span.Length <= offset)
         {
+            _status = offset == 0 ? MultipartReadingStatus.SectionsNotFound : MultipartReadingStatus.End;
             section = default;
-            return offset == 0 ? MultipartReadingStatus.SectionsNotFound : MultipartReadingStatus.End;
+            return false;
         }
         span = span.Slice(offset);
 #if DEBUG
@@ -67,9 +67,9 @@ public ref struct MultipartReader
             {
                 if (!span.StartsWith(boundary.Slice(2)))
                 {
-                    _offset = (int)MultipartReadingStatus.StartBoundaryNotFound;
+                    _status = MultipartReadingStatus.StartBoundaryNotFound;
                     section = default;
-                    return MultipartReadingStatus.StartBoundaryNotFound;
+                    return false;
                 }
             }
             else
@@ -77,9 +77,9 @@ public ref struct MultipartReader
                 start = span.IndexOf(boundary.Slice(2));//del \r\n
                 if (start < 0)
                 {
-                    _offset = (int)MultipartReadingStatus.StartBoundaryNotFound;
+                    _status = MultipartReadingStatus.StartBoundaryNotFound;
                     section = default;
-                    return MultipartReadingStatus.StartBoundaryNotFound;
+                    return false;
                 }
             }
 
@@ -87,9 +87,9 @@ public ref struct MultipartReader
             span = span.Slice(start);
             if (span.Length <= 2 || span[0] != CR || span[1] != LF)
             {
-                _offset = (int)MultipartReadingStatus.StartBoundaryCRLFNotFound;
+                _status = MultipartReadingStatus.StartBoundaryCRLFNotFound;
                 section = default;
-                return MultipartReadingStatus.StartBoundaryCRLFNotFound;
+                return false;
             }
             start += 2;
             span = span.Slice(2);
@@ -100,16 +100,16 @@ public ref struct MultipartReader
         var bodyEnd = span.IndexOf(boundary);
         if (bodyEnd < 0)
         {
-            _offset = (int)MultipartReadingStatus.BoundaryNotFound;
+            _status = MultipartReadingStatus.BoundaryNotFound;
             section = default;
-            return MultipartReadingStatus.BoundaryNotFound;
+            return false;
         }
         var end = bodyEnd + boundaryLength + 2;
         if (end > span.Length)
         {
-            _offset = (int)MultipartReadingStatus.EndBoundaryNotFound;
+            _status = MultipartReadingStatus.EndBoundaryNotFound;
             section = default;
-            return MultipartReadingStatus.EndBoundaryNotFound;
+            return false;
         }
 #if DEBUG
         spanUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, end));
@@ -120,18 +120,18 @@ public ref struct MultipartReader
         {
             if (first != Dash || second != Dash)
             {
-                _offset = (int)MultipartReadingStatus.EndBoundaryNotFound;
+                _status = MultipartReadingStatus.EndBoundaryNotFound;
                 section = default;
-                return MultipartReadingStatus.EndBoundaryNotFound;
+                return false;
             }
             if (isStrict)
             {
                 end += 2;
                 if (end != span.Length || span[end - 2] != CR || span[end - 1] != LF)
                 {
-                    _offset = (int)MultipartReadingStatus.EndBoundaryNotFound;
+                    _status = MultipartReadingStatus.EndBoundaryNotFound;
                     section = default;
-                    return MultipartReadingStatus.EndBoundaryNotFound;
+                    return false;
                 }
             }
             else
@@ -146,9 +146,9 @@ public ref struct MultipartReader
         var index = span.IndexOf(CRLFCRLF);
         if (index < 0)
         {
-            _offset = (int)MultipartReadingStatus.SectionSeparatorNotFound;
+            _status = MultipartReadingStatus.SectionSeparatorNotFound;
             section = default;
-            return MultipartReadingStatus.SectionSeparatorNotFound;
+            return false;
         }
         start += offset;
         index += start;
@@ -162,17 +162,17 @@ public ref struct MultipartReader
         var bodyUtf8 = System.Text.Encoding.UTF8.GetString(_span[section.Body]);
 #endif
         _offset = end + start;
-        return MultipartReadingStatus.Done;
+        _status = MultipartReadingStatus.Done;
+        return true;
     }
 
-    public MultipartReadingStatus ReadNextSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
+    public bool ReadNextSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
         ReadOnlySpan<byte> contentDispositionName, out MultipartSection section, bool isStrict = true)
     {
-        var status = ReadNextSection(out section, isStrict);
-        if (status != MultipartReadingStatus.Done)
+        if (!ReadNextSection(out section, isStrict))
         {
             section = default;
-            return status;
+            return false;
         }
         var headers = _span[section.Headers];
 #if DEBUG
@@ -180,11 +180,11 @@ public ref struct MultipartReader
         var bodyUtf8 = System.Text.Encoding.UTF8.GetString(_span[section.Body]);
 #endif
         var headersReader = new MultipartHeadersReader(headers);
-        status = headersReader.ReadNextContentDisposition(out var value);
-        if (status != MultipartReadingStatus.Done)
+        if (!headersReader.ReadNextContentDisposition(out var value))
         {
             section = default;
-            return status;
+            _status = headersReader.Status;
+            return false;
         }
         var contentDisposition = headers[value];
 #if DEBUG
@@ -194,36 +194,38 @@ public ref struct MultipartReader
         if (!contentDispositionReader.TryReadType(out var type))
         {
             section = default;
-            return MultipartReadingStatus.HeaderFieldContentDispositionTypeNotFound;
+            _status = MultipartReadingStatus.HeaderFieldContentDispositionTypeNotFound;
+            return false;
         }
         if (!contentDisposition[type].SequenceEqual(contentDispositionType))
         {
             section = default;
-            return MultipartReadingStatus.HeaderFieldContentDispositionTypeNotSame;
+            _status = MultipartReadingStatus.HeaderFieldContentDispositionTypeNotSame;
+            return false;
         }
-        status = contentDispositionReader.ReadName(out var name);
-        if (status != MultipartReadingStatus.Done)
+        if (!contentDispositionReader.ReadName(out var name))
         {
             //TODO: status может быть равен End
             section = default;
-            return status;
+            return false;
         }
         if (!contentDisposition[name].SequenceEqual(contentDispositionName))
         {
             section = default;
-            return MultipartReadingStatus.HeaderFieldContentDispositionNameNotSame;
+            _status = MultipartReadingStatus.HeaderFieldContentDispositionNameNotSame;
+            return false;
         }
-        return MultipartReadingStatus.Done;
+        return true;
     }
 
-    public MultipartReadingStatus ReadNextSectionByContentDispositionFormData(ReadOnlySpan<byte> name, out MultipartSection section)
+    public bool ReadNextSectionByContentDispositionFormData(ReadOnlySpan<byte> name, out MultipartSection section)
         => ReadNextSectionByContentDisposition("form-data"u8, name, out section);
 
-    public MultipartReadingStatus FindSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
+    public bool FindSectionByContentDisposition(ReadOnlySpan<byte> contentDispositionType,
         ReadOnlySpan<byte> contentDispositionName, out MultipartSection section)
     {
         var span = _span;
-        while (ReadNextSection(out section) == MultipartReadingStatus.Done)
+        while (ReadNextSection(out section))
         {
             var headers = span[section.Headers];
 #if DEBUG
@@ -231,7 +233,7 @@ public ref struct MultipartReader
             var bodyUtf8 = System.Text.Encoding.UTF8.GetString(span[section.Body]);
 #endif
             var headersReader = new MultipartHeadersReader(headers);
-            while (headersReader.FindContentDisposition(out var value) == MultipartReadingStatus.Done)
+            while (headersReader.FindContentDisposition(out var value))
             {
                 var contentDisposition = headers[value];
 #if DEBUG
@@ -240,18 +242,19 @@ public ref struct MultipartReader
                 var contentDispositionReader = new MultipartContentDispositionReader(contentDisposition);
                 if (contentDispositionReader.IsType(contentDispositionType))
                 {
-                    while (contentDispositionReader.FindName(out var name) == MultipartReadingStatus.Done)
+                    while (contentDispositionReader.FindName(out var name))
                     {
                         if (contentDisposition[name].SequenceEqual(contentDispositionName))
-                            return MultipartReadingStatus.Done;
+                            return true;
                     }
                 }
             }
         }
         section = default;
-        return MultipartReadingStatus.HeaderNameNotSame;
+        _status = MultipartReadingStatus.HeaderNameNotSame;
+        return false;
     }
 
-    public MultipartReadingStatus FindSectionByContentDispositionFormData(ReadOnlySpan<byte> name, out MultipartSection section)
+    public bool FindSectionByContentDispositionFormData(ReadOnlySpan<byte> name, out MultipartSection section)
         => FindSectionByContentDisposition("form-data"u8, name, out section);
 }

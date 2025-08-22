@@ -88,11 +88,13 @@ internal class MultipartHeaderFieldsReaderTest
         Assert.That(cd.ToString(), Is.EqualTo("inline; filename=\"Transform ;utf8.xsl\"; f=b"));
 
         reader.Reset();
-        Assert.That(reader.ReadNextField(out var field, TrimOptions.None, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out var field, TrimOptions.None, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].IsEmpty, Is.True);
         Assert.That(span[field.Value].SequenceEqual("inline"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("filename"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("Transform ;utf8.xsl"u8), Is.True);
 
@@ -101,11 +103,13 @@ internal class MultipartHeaderFieldsReaderTest
         span = "filename=\" Transform ; a; b; c; utf8.xsl \" \r\f\n  ;  f=\"1 ; 2 ; 3\"  "u8;
         reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.MaxEnd, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.MaxEnd, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("filename"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual(" Transform ; a; b; c; utf8.xsl "u8), Is.True);
         
-        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("f"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("1 ; 2 ; 3"u8), Is.True);
 
@@ -114,15 +118,22 @@ internal class MultipartHeaderFieldsReaderTest
         span = "ab=\"\"a\",\"b\"\""u8;
         reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("ab"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("\"a\",\"b\""u8), Is.True);
 
-        Assert.That(new MultipartHeaderFieldsReader("filename=\"a"u8).ReadNextField(out _), Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound));
+        reader = new MultipartHeaderFieldsReader("filename=\"a"u8);
+        Assert.That(reader.ReadNextField(out _), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound));
 
-        Assert.That(new MultipartHeaderFieldsReader("filename=\"a;a=b"u8).ReadNextField(out _), Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound));
-
-        Assert.That(new MultipartHeaderFieldsReader("filename=\"a;\"a=b"u8).ReadNextField(out _), Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid));
+        reader = new MultipartHeaderFieldsReader("filename=\"a;a=b"u8);
+        Assert.That(reader.ReadNextField(out _), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound));
+        
+        reader = new MultipartHeaderFieldsReader("filename=\"a;\"a=b"u8);
+        Assert.That(reader.ReadNextField(out _), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid));
     }
 
     [Test]
@@ -131,83 +142,104 @@ internal class MultipartHeaderFieldsReaderTest
         var span = " form-data; name=transform; filename=\"Transform;utf8.xsl\"; filename*=utf-8''file%20name.jpg"u8;
         var reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.ReadNextField(out var field), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out var field), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(field.Name, Is.EqualTo(default(Range)));
         Assert.That(span[field.Value].SequenceEqual("form-data"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("name"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("filename"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("filename*"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field), Is.EqualTo(MultipartReadingStatus.End));
+        Assert.That(reader.ReadNextField(out field), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.End));
         Assert.That(field, Is.EqualTo(default(MultipartHeaderField)));
 
         span = "form-data;name=\"transform\";filename=\"Transform;utf8.xsl\";filename*=\"utf-8''file%20name.jpg\""u8;
         reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(field.Name, Is.EqualTo(default(Range)));
         Assert.That(span[field.Value].SequenceEqual("form-data"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("name"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("filename"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.None, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("filename*"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field), Is.EqualTo(MultipartReadingStatus.End));
+        Assert.That(reader.ReadNextField(out field), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.End));
         Assert.That(field, Is.EqualTo(default(MultipartHeaderField)));
 
         span = " \n\r\t\v\f form-data \n\r\t\v\f ; \n\r\t\v\f name=transform \n\r\t\v\f ; \n\r\t\v\f filename=Transform-utf8.xsl \n\r\t\v\f "u8;
         reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(field.Name, Is.EqualTo(default(Range)));
         Assert.That(span[field.Value].SequenceEqual("form-data"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("name"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("filename"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("Transform-utf8.xsl"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field), Is.EqualTo(MultipartReadingStatus.End));
+        Assert.That(reader.ReadNextField(out field), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.End));
         Assert.That(field, Is.EqualTo(default(MultipartHeaderField)));
 
         span = "\n\r\t\v\f name \n\r\t\v\f = \n\r\t\v\f transform \n\r\t\v\f ; \n\r\t\v\f filename \n\r\t\v\f = \n\r\t\v\f \"Transform;utf8.xsl\" \n\r\t\v\f "u8;
         reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("name"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[field.Name].SequenceEqual("filename"u8), Is.True);
         Assert.That(span[field.Value].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
 
-        Assert.That(reader.ReadNextField(out field), Is.EqualTo(MultipartReadingStatus.End));
+        Assert.That(reader.ReadNextField(out field), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.End));
         Assert.That(field, Is.EqualTo(default(MultipartHeaderField)));
 
-        Assert.That(new MultipartHeaderFieldsReader("=val"u8).ReadNextField(out field), Is.EqualTo(MultipartReadingStatus.HeaderFieldNameNotFound));
+        reader = new MultipartHeaderFieldsReader("=val"u8);
+        Assert.That(reader.ReadNextField(out field), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.HeaderFieldNameNotFound));
         Assert.That(field, Is.EqualTo(default(MultipartHeaderField)));
 
-        Assert.That(new MultipartHeaderFieldsReader(" \n\r\t\v\f =val"u8).ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.HeaderFieldNameNotFound));
+        reader = new MultipartHeaderFieldsReader(" \n\r\t\v\f =val"u8);
+        Assert.That(reader.ReadNextField(out field, TrimOptions.Max, TrimOptions.None), Is.False);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.HeaderFieldNameNotFound));
         Assert.That(field, Is.EqualTo(default(MultipartHeaderField)));
     }
 
@@ -217,13 +249,16 @@ internal class MultipartHeaderFieldsReaderTest
         var span = " \n\r\t\v\f form-data \n\r\t\v\f ; \n\r\t\v\f name \n\r\t\v\f = \n\r\t\v\f transform \n\r\t\v\f ; \n\r\t\v\f filename \n\r\t\v\f = \n\r\t\v\f \"Transform;utf8.xsl\" \n\r\t\v\f "u8;
         var reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.ReadNextValueByName(""u8, out var value, TrimOptions.Max, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextValueByName(""u8, out var value, TrimOptions.Max, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("form-data"u8), Is.True);
 
-        Assert.That(reader.ReadNextValueByName("name"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextValueByName("name"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.ReadNextValueByName("filename"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadNextValueByName("filename"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
     }
 
@@ -233,13 +268,16 @@ internal class MultipartHeaderFieldsReaderTest
         var span = " \n\r\t\v\f form-data \n\r\t\v\f ; \n\r\t\v\f name \n\r\t\v\f = \n\r\t\v\f transform \n\r\t\v\f ; \n\r\t\v\f filename \n\r\t\v\f = \n\r\t\v\f \"Transform;utf8.xsl\" \n\r\t\v\f "u8;
         var reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.FindValueByName(""u8, out var value, TrimOptions.Max, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindValueByName(""u8, out var value, TrimOptions.Max, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("form-data"u8), Is.True);
 
-        Assert.That(reader.FindValueByName("name"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindValueByName("name"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.FindValueByName("filename"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindValueByName("filename"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
     }
 
@@ -249,20 +287,24 @@ internal class MultipartHeaderFieldsReaderTest
         var span = " \n\r\t\v\f filename \n\r\t\v\f = \n\r\t\v\f \"Transform;utf8.xsl\" \n\r\t\v\f ; \n\r\t\v\f name \n\r\t\v\f = \n\r\t\v\f transform \n\r\t\v\f ; \n\r\t\v\f form-data \n\r\t\v\f "u8;
         var reader = new MultipartHeaderFieldsReader(span);
 
-        Assert.That(reader.FindValueByName(""u8, out var value, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindValueByName(""u8, out var value, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("form-data"u8), Is.True);
 
         reader.Reset();
-        Assert.That(reader.FindValueByName("name"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindValueByName("name"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("transform"u8), Is.True);
         
         reader.Reset();
-        Assert.That(reader.FindValueByName("filename"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindValueByName("filename"u8, out value, TrimOptions.Max, TrimOptions.Max), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
 
         reader.Reset();
         //TODO: баг или фича??
-        Assert.That(reader.FindValueByName(""u8, out value, TrimOptions.Max, TrimOptions.None), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindValueByName(""u8, out value, TrimOptions.Max, TrimOptions.None), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[value].SequenceEqual("utf8.xsl\""u8), Is.True);
     }
 }

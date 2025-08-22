@@ -12,13 +12,16 @@ internal class MultipartContentDispositionReaderTest
         Assert.That(reader.IsFormData(), Is.True);
 
         Assert.That(reader.Offset, Is.Not.Zero);
-        Assert.That(reader.ReadName(out var name), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadName(out var name), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[name].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.ReadFileName(out var filename), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadFileName(out var filename), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[filename].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
 
-        Assert.That(reader.ReadFileNameStar(out var filenamestar), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.ReadFileNameStar(out var filenamestar), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[filenamestar].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
 
         reader.Reset();
@@ -182,13 +185,16 @@ internal class MultipartContentDispositionReaderTest
         Assert.That(reader.IsFormData(), Is.True);
 
         Assert.That(reader.Offset, Is.Not.Zero);
-        Assert.That(reader.FindName(out var name), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindName(out var name), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[name].SequenceEqual("transform"u8), Is.True);
 
-        Assert.That(reader.FindFileName(out var filename), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindFileName(out var filename), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[filename].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
 
-        Assert.That(reader.FindFileNameStar(out var filenamestar), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindFileNameStar(out var filenamestar), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[filenamestar].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
 
         reader.Reset();
@@ -205,15 +211,18 @@ internal class MultipartContentDispositionReaderTest
         Assert.That(reader.IsFormData(), Is.True);
 
         Assert.That(reader.Offset, Is.Not.Zero);
-        Assert.That(reader.FindName(out var name), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindName(out var name), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[name].SequenceEqual("transform"u8), Is.True);
 
         reader.Reset();
-        Assert.That(reader.FindFileName(out var filename), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindFileName(out var filename), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[filename].SequenceEqual("Transform;utf8.xsl"u8), Is.True);
 
         reader.Reset();
-        Assert.That(reader.FindFileNameStar(out var filenamestar), Is.EqualTo(MultipartReadingStatus.Done));
+        Assert.That(reader.FindFileNameStar(out var filenamestar), Is.True);
+        Assert.That(reader.Status, Is.EqualTo(MultipartReadingStatus.Done));
         Assert.That(span[filenamestar].SequenceEqual("utf-8''file%20name.jpg"u8), Is.True);
 
         reader.Reset();

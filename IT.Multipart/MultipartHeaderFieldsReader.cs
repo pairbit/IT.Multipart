@@ -14,10 +14,13 @@ public ref struct MultipartHeaderFieldsReader
 
     private readonly ReadOnlySpan<byte> _span;
     private int _offset;
+    private MultipartReadingStatus _status;
 
     public readonly ReadOnlySpan<byte> Span => _span;
 
     public readonly int Offset => _offset;
+
+    public readonly MultipartReadingStatus Status => _status;
 
     public MultipartHeaderFieldsReader(ReadOnlySpan<byte> span)
     {
@@ -28,6 +31,7 @@ public ref struct MultipartHeaderFieldsReader
     public void Reset()
     {
         _offset = 0;
+        _status = MultipartReadingStatus.Done;
     }
 
     public bool TryReadNextValue(out Range value)
@@ -72,16 +76,17 @@ public ref struct MultipartHeaderFieldsReader
         return true;
     }
 
-    public MultipartReadingStatus ReadNextField(out MultipartHeaderField field)
+    public bool ReadNextField(out MultipartHeaderField field)
         => ReadNextField(out field, TrimOptions.MinStart, TrimOptions.None);
 
-    public MultipartReadingStatus ReadNextField(out MultipartHeaderField field,
+    public bool ReadNextField(out MultipartHeaderField field,
         TrimOptions trim, TrimOptions trimField)
     {
         if (!TryReadNextValue(out var value, trim))
         {
             field = default;
-            return MultipartReadingStatus.End;
+            _status = MultipartReadingStatus.End;
+            return false;
         }
         var span = _span[value];
 #if DEBUG
@@ -97,7 +102,8 @@ public ref struct MultipartHeaderFieldsReader
             if (nameSep == 0)
             {
                 field = default;
-                return MultipartReadingStatus.HeaderFieldNameNotFound;
+                _status = MultipartReadingStatus.HeaderFieldNameNotFound;
+                return false;
             }
 #if DEBUG
             var nameUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, nameSep));
@@ -110,7 +116,8 @@ public ref struct MultipartHeaderFieldsReader
             if (nameEnd == 0)
             {
                 field = default;
-                return MultipartReadingStatus.HeaderFieldNameNotFound;
+                _status = MultipartReadingStatus.HeaderFieldNameNotFound;
+                return false;
             }
 #if DEBUG
             nameUtf8 = System.Text.Encoding.UTF8.GetString(span.Slice(0, nameEnd));
@@ -134,11 +141,10 @@ public ref struct MultipartHeaderFieldsReader
                 }
                 else
                 {
-                    var status = ReadNextQuote(trim, out valueEnd);
-                    if (status != MultipartReadingStatus.Done)
+                    if (!ReadNextQuote(trim, out valueEnd))
                     {
                         field = default;
-                        return status;
+                        return false;
                     }
                     valueEnd--;
                 }
@@ -158,22 +164,20 @@ public ref struct MultipartHeaderFieldsReader
             valueUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Value]);
 #endif
         }
-        return MultipartReadingStatus.Done;
+        return true;
     }
 
-    public MultipartReadingStatus ReadNextValueByName(ReadOnlySpan<byte> name, out Range value)
+    public bool ReadNextValueByName(ReadOnlySpan<byte> name, out Range value)
         => ReadNextValueByName(name, out value, TrimOptions.MinStart, TrimOptions.None);
 
-    public MultipartReadingStatus ReadNextValueByName(ReadOnlySpan<byte> name, out Range value,
+    public bool ReadNextValueByName(ReadOnlySpan<byte> name, out Range value,
         TrimOptions trim, TrimOptions trimField)
     {
-        var status = ReadNextField(out var field, trim, trimField);
-        if (status != MultipartReadingStatus.Done)
+        if (!ReadNextField(out var field, trim, trimField))
         {
             value = default;
-            return status;
+            return false;
         }
-
 #if DEBUG
         var nameUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Name]);
         var valueUtf8 = System.Text.Encoding.UTF8.GetString(_span[field.Value]);
@@ -181,29 +185,23 @@ public ref struct MultipartHeaderFieldsReader
         if (!_span[field.Name].SequenceEqual(name))
         {
             value = default;
-            return MultipartReadingStatus.HeaderFieldNameNotSame;
+            _status = MultipartReadingStatus.HeaderFieldNameNotSame;
+            return false;
         }
 
         value = field.Value;
-        return MultipartReadingStatus.Done;
+        return true;
     }
 
-    public MultipartReadingStatus FindValueByName(ReadOnlySpan<byte> name, out Range value)
+    public bool FindValueByName(ReadOnlySpan<byte> name, out Range value)
         => FindValueByName(name, out value, TrimOptions.MinStart, TrimOptions.None);
 
-    public MultipartReadingStatus FindValueByName(ReadOnlySpan<byte> name, out Range value,
+    public bool FindValueByName(ReadOnlySpan<byte> name, out Range value,
         TrimOptions trim, TrimOptions trimField)
     {
         var span = _span;
-        MultipartReadingStatus status;
-        do
+        while (ReadNextField(out var field, trim, trimField))
         {
-            status = ReadNextField(out var field, trim, trimField);
-            if (status != MultipartReadingStatus.Done)
-            {
-                value = default;
-                break;
-            }
 #if DEBUG
             var nameUtf8 = System.Text.Encoding.UTF8.GetString(span[field.Name]);
             var valueUtf8 = System.Text.Encoding.UTF8.GetString(span[field.Value]);
@@ -211,22 +209,23 @@ public ref struct MultipartHeaderFieldsReader
             if (span[field.Name].SequenceEqual(name))
             {
                 value = field.Value;
-                status = MultipartReadingStatus.Done;
-                break;
+                _status = MultipartReadingStatus.Done;
+                return true;
             }
-        } while (true);
-
-        return status;
+        }
+        value = default;
+        return false;
     }
 
-    private MultipartReadingStatus ReadNextQuote(TrimOptions trim, out int index)
+    private bool ReadNextQuote(TrimOptions trim, out int index)
     {
         var offset = _offset;
         var span = _span;
         if (span.Length <= offset)
         {
             index = 0;
-            return MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound;
+            _status = MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound;
+            return false;
         }
         span = span.Slice(offset);
 #if DEBUG
@@ -236,7 +235,8 @@ public ref struct MultipartHeaderFieldsReader
         if (sep < 0)
         {
             index = 0;
-            return MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound;
+            _status = MultipartReadingStatus.HeaderFieldValueEndQuoteNotFound;
+            return false;
         }
         sep++;
         var end = sep;
@@ -252,7 +252,8 @@ public ref struct MultipartHeaderFieldsReader
                         if (token != Sep)
                         {
                             index = 0;
-                            return MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid;
+                            _status = MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid;
+                            return false;
                         }
                         break;
                     }
@@ -261,12 +262,13 @@ public ref struct MultipartHeaderFieldsReader
             else if (span[end] != Sep)
             {
                 index = 0;
-                return MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid;
+                _status = MultipartReadingStatus.HeaderFieldValueEndQuoteInvalid;
+                return false;
             }
             end++;
         }
         _offset = offset + end;
         index = offset + sep;
-        return MultipartReadingStatus.Done;
+        return true;
     }
 }
