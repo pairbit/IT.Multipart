@@ -84,7 +84,12 @@ internal class MultipartHeaderFieldsReaderTest
 
         var cd = ContentDispositionHeaderValue.Parse("inline;filename=\"Transform ;utf8.xsl\" ; f=b");
         Assert.That(cd.DispositionType, Is.EqualTo("inline"));
-        Assert.That(cd.FileName, Is.EqualTo("\"Transform ;utf8.xsl\""));
+        Assert.That(cd.FileName, Is.EqualTo(
+#if NET10_0_OR_GREATER
+        "Transform ;utf8.xsl"));
+#else
+        "\"Transform ;utf8.xsl\""));
+#endif
         Assert.That(cd.ToString(), Is.EqualTo("inline; filename=\"Transform ;utf8.xsl\"; f=b"));
 
         reader.Reset();
