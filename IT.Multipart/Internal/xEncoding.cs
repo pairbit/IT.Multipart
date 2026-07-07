@@ -18,8 +18,11 @@ internal static class xEncoding
 
         if (length <= MaxLength)
         {
-            //TODO: rent buffer
+#if NET
+            str = encoding.GetString(sequence);
+#else
             str = encoding.GetString(sequence.ToArray());
+#endif
             return true;
         }
 
